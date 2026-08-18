@@ -1,0 +1,366 @@
+{
+  "schema_id": "invoice.standard",
+  "name": "Standard Invoice",
+  "fields": [
+    {
+      "name": "output_type",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "supplier_name",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": null,
+      "required": true,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "supplier_aliases",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "invoice_number",
+      "scope": "document",
+      "type": "string",
+      "role": "identifier",
+      "label_hint": "Invoice Number",
+      "required": true,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "invoice_date",
+      "scope": "document",
+      "type": "date",
+      "role": "none",
+      "label_hint": "Invoice Date",
+      "required": true,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "due_date",
+      "scope": "document",
+      "type": "date",
+      "role": "none",
+      "label_hint": "Due Date",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "account_number",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Account Number",
+      "required": false,
+      "enum_values": [],
+      "description": "Customer/account number identifying the billed account."
+    },
+    {
+      "name": "ban",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": "Secondary billing account number, when the document shows one."
+    },
+    {
+      "name": "billing_period_start",
+      "scope": "document",
+      "type": "date",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": "Start of the billing period the invoice covers."
+    },
+    {
+      "name": "billing_period_end",
+      "scope": "document",
+      "type": "date",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": "End of the billing period the invoice covers."
+    },
+    {
+      "name": "currency",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "po_number",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "payment_terms",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "source_page",
+      "scope": "document",
+      "type": "integer",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "confidence",
+      "scope": "document",
+      "type": "number",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "subtotal",
+      "scope": "document",
+      "type": "currency",
+      "role": "subtotal",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "tax",
+      "scope": "document",
+      "type": "currency",
+      "role": "tax",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "fees",
+      "scope": "document",
+      "type": "currency",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "current_charges",
+      "scope": "document",
+      "type": "currency",
+      "role": "subtotal",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "total_due",
+      "scope": "document",
+      "type": "currency",
+      "role": "total",
+      "label_hint": "Total Due",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "tax_rate",
+      "scope": "document",
+      "type": "number",
+      "role": "tax_rate",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "line_number",
+      "scope": "row",
+      "type": "integer",
+      "role": "none",
+      "label_hint": null,
+      "required": true,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "service_id",
+      "scope": "row",
+      "type": "string",
+      "role": "identifier",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": "Per-line service/item identifier (e.g. circuit or service number, SKU, line ID)."
+    },
+    {
+      "name": "billing_reference",
+      "scope": "row",
+      "type": "string",
+      "role": "identifier",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": "Per-line contract/order/billing reference, when shown separately from the service id."
+    },
+    {
+      "name": "description",
+      "scope": "row",
+      "type": "string",
+      "role": "none",
+      "label_hint": null,
+      "required": true,
+      "enum_values": [],
+      "description": "Human-readable description of the charge."
+    },
+    {
+      "name": "charge_type",
+      "scope": "row",
+      "type": "enum",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [
+        "recurring",
+        "one_time",
+        "tax",
+        "fee",
+        "credit",
+        "adjustment",
+        "surcharge",
+        "usage",
+        "unknown"
+      ],
+      "description": "Kind of charge; each fee/tax/credit/adjustment is its own line item."
+    },
+    {
+      "name": "amount",
+      "scope": "row",
+      "type": "currency",
+      "role": "amount",
+      "label_hint": null,
+      "required": true,
+      "enum_values": [],
+      "description": "Net (pre-tax) amount for this line; numeric, no currency symbol."
+    },
+    {
+      "name": "tax_amount",
+      "scope": "row",
+      "type": "currency",
+      "role": "tax",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": "Per-line tax amount, only when tax is itemized per line (else null)."
+    },
+    {
+      "name": "currency",
+      "scope": "row",
+      "type": "string",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "billing_period_start",
+      "scope": "row",
+      "type": "date",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "billing_period_end",
+      "scope": "row",
+      "type": "date",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "quantity",
+      "scope": "row",
+      "type": "number",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "unit_rate",
+      "scope": "row",
+      "type": "currency",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "source_page",
+      "scope": "row",
+      "type": "integer",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "confidence",
+      "scope": "row",
+      "type": "number",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+
+# Frontend (built separately)
+frontend/node_modules/
+frontend/.next/
+
+# Data
+stencil_data/
+extraction_models/
+
+# IDE / OS
+.git/
+.claude/
+.env
+.env.local
+*.md
+!README.md

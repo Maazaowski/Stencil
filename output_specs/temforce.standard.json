@@ -1,0 +1,14 @@
+{
+  "spec_id": "temforce.standard",
+  "name": "TemForce Standard (8-column)",
+  "columns": [
+    {"header": "EXT_SERVICEID", "source": "row.service_id", "fallback": "row.billing_reference", "width": 20},
+    {"header": "EXT_BILLINGREFERENCE", "source": "row.billing_reference", "fallback": "row.service_id", "width": 20},
+    {"header": "EXT_DATE", "source": "field.invoice_date", "width": 14},
+    {"header": "formula", "source": "field.due_date", "fallback": "field.invoice_date", "width": 14},
+    {"header": "EXT_AMOUNT", "source": "row.amount", "width": 14, "number_format": "#,##0.##"},
+    {"header": "EXT_ACCOUNT", "source": "field.account_number", "width": 16},
+    {"header": "EXT_INVOICENUMBER", "source": "field.invoice_number", "width": 20},
+    {"header": "EXT_TAX", "source": "computed.line_tax", "width": 14, "number_format": "#,##0.00"}
+  ]
+}

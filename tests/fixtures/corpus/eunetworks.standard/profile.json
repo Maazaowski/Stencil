@@ -1,0 +1,124 @@
+{
+  "profile_id": "eunetworks.standard.v2",
+  "version": 2,
+  "status": "training",
+  "layout_description": null,
+  "identity": {
+    "canonical_name": "euNetworks",
+    "aliases": [
+      "euNetworks Group",
+      "euNetworks GmbH",
+      "eu Networks",
+      "euNetworks Ireland-Private Fiber Limited",
+      "euNetworks Ireland"
+    ]
+  },
+  "classification": {
+    "output_type": "standard"
+  },
+  "output_spec_id": "temforce.standard",
+  "field_schema_id": "invoice.standard",
+  "field_overrides": [
+    {
+      "name": "invoice_number",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Document No.",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "invoice_date",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Invoice Date",
+      "required": false,
+      "enum_values": [],
+      "date_format": "%d/%m/%Y",
+      "description": ""
+    },
+    {
+      "name": "due_date",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Due Date",
+      "required": false,
+      "enum_values": [],
+      "date_format": "%d/%m/%Y",
+      "description": ""
+    },
+    {
+      "name": "account_number",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Customer ID",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "total_due",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Invoice Total",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "currency",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Currency",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    }
+  ],
+  "delivery": {
+    "inbound_path": "/data/EUNetworks/pdf",
+    "output_path": "/data/EUNetworks/xls"
+  },
+  "notes": "euNetworks invoices use a TABLE-STYLE header on page 1: labels on one row (Document No., Customer ID, Invoice Date, Due Date) with values on the row directly below. Line items are multi-row service blocks (S######## service_id, C#####-### billing_reference, amounts in the Net Value column). May be in EUR with Irish/German VAT (often 23%). Some invoices may be in German language. Line amounts are net (pre-tax); extract invoice tax_rate when shown. Currency often appears only in bank details, not as a dedicated label.",
+  "advanced": {
+    "document_structure": {
+      "detail_start_marker": "Service"
+    },
+    "line_item_hints": {
+      "subtotal_keywords": [
+        "Net Total",
+        "Subtotal"
+      ],
+      "tax_keywords": [
+        "VAT",
+        "MwSt"
+      ],
+      "detail_table_anchors": [],
+      "line_item_granularity": "per_charge_row",
+      "service_id_preference": null,
+      "billing_reference_preference": "separate_column",
+      "service_id_column_label": "Service Number",
+      "billing_reference_column_label": "Contract Number",
+      "tax_output_mode": "calculate",
+      "tax_rate_source": "invoice_tax_rate",
+      "skip_row_keywords": [],
+      "table_column_labels": []
+    },
+    "include_zero_amount_line_items": false
+  },
+  "layout_fingerprint": null,
+  "training_config": {
+    "min_validation_successes": 3,
+    "require_reconciliation": true
+  },
+  "owner": "stencil",
+  "created_date": "2026-05-20",
+  "last_updated_date": "2026-06-11"
+}

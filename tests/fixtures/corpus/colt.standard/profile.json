@@ -1,0 +1,170 @@
+{
+  "profile_id": "colt.standard.v1",
+  "version": 1,
+  "status": "active",
+  "layout_description": null,
+  "identity": {
+    "canonical_name": "Colt",
+    "aliases": [
+      "Colt Technology Services",
+      "Colt Telecom",
+      "Colt Technology Services Group"
+    ]
+  },
+  "classification": {
+    "output_type": "standard"
+  },
+  "output_spec_id": "temforce.standard",
+  "field_schema_id": "invoice.standard",
+  "field_overrides": [
+    {
+      "name": "invoice_number",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Invoice Number",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "invoice_date",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Invoice Date",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "due_date",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Payment Due",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "account_number",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Customer Number",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "total_due",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Total Amount Due",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "currency",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Currency",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    }
+  ],
+  "delivery": {
+    "inbound_path": "/data/Colt/pdf",
+    "output_path": "/data/Colt/xls"
+  },
+  "notes": "Colt invoices are typically structured with clear charge detail tables. May include VAT for European billing. Currency is usually GBP or EUR.",
+  "advanced": {
+    "document_structure": {
+      "detail_start_marker": "Service Level Activity",
+      "detail_end_marker": null
+    },
+    "line_item_hints": {
+      "subtotal_keywords": [
+        "Subtotal",
+        "Net Amount"
+      ],
+      "tax_keywords": [
+        "VAT",
+        "Tax",
+        "MOMS",
+        "BTW",
+        "DPH"
+      ],
+      "detail_table_anchors": [
+        "SERVICE LEVEL ACTIVITY",
+        "Service Level Activity"
+      ],
+      "line_item_granularity": "per_charge_row",
+      "service_id_preference": "first_identifier",
+      "billing_reference_preference": "same_as_service_id",
+      "service_id_column_label": null,
+      "billing_reference_column_label": null,
+      "skip_row_keywords": [
+        "Total Current Charges",
+        "Total Amount Due"
+      ],
+      "tax_output_mode": "calculate",
+      "tax_rate_source": "auto",
+      "table_column_labels": [
+        "Service ID",
+        "Description",
+        "Amount",
+        "Billing Period",
+        "Tax Rate",
+        "Tax Amount",
+        "Total Net Charges",
+        "Total Current Charges",
+        "Amount Exclusive of"
+      ]
+    },
+    "include_zero_amount_line_items": false,
+    "require_line_item_identifier": false
+  },
+  "layout_fingerprint": {
+    "summary_anchors": [
+      "Due Date",
+      "Invoice",
+      "Billing Account Number",
+      "Payment Details"
+    ],
+    "currency_codes": [
+      "USD",
+      "EUR",
+      "CZK",
+      "GBP",
+      "SEK"
+    ],
+    "ignore_label_patterns": [
+      "(?i)^total\\s+sweden$",
+      "(?i)^total\\s+amsterdam",
+      "(?i)for\\s+\\w+\\s+purposes\\s+only"
+    ],
+    "optional_column_patterns": [
+      "(?i)^dia\\s+(actual|commit)\\s+usage$"
+    ],
+    "exclude_span_patterns": [
+      "(?i)\\biban\\b",
+      "(?i)\\bswift\\b",
+      "(?i)\\bbeneficiary\\b",
+      "(?i)\\bbank\\b",
+      "(?i)\\bunicredit\\b"
+    ]
+  },
+  "training_config": {
+    "min_validation_successes": 3,
+    "require_reconciliation": true
+  },
+  "owner": "stencil",
+  "created_date": "2026-05-20",
+  "last_updated_date": "2026-06-24"
+}

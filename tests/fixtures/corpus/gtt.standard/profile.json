@@ -1,0 +1,122 @@
+{
+  "profile_id": "gtt.standard.v1",
+  "version": 1,
+  "status": "training",
+  "layout_description": null,
+  "identity": {
+    "canonical_name": "GTT",
+    "aliases": [
+      "GTT Communications",
+      "GTT Americas",
+      "GTT Communications Inc"
+    ]
+  },
+  "classification": {
+    "output_type": "standard"
+  },
+  "output_spec_id": "temforce.standard",
+  "field_schema_id": "invoice.standard",
+  "field_overrides": [
+    {
+      "name": "invoice_number",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Invoice Number",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "invoice_date",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Invoice Date",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "due_date",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Due Date",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "account_number",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Account Number",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    },
+    {
+      "name": "total_due",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Total Due",
+      "required": false,
+      "enum_values": [],
+      "description": ""
+    }
+  ],
+  "delivery": {
+    "inbound_path": "/data/GTT/pdf",
+    "output_path": "/data/GTT/xls"
+  },
+  "notes": "GTT invoices typically have a summary page followed by detailed service pages. Line items may span multiple pages. Service IDs often follow the format XX/NNNN or GTT-NNNN. Watch for multi-currency invoices where EUR and USD sections appear separately.",
+  "advanced": {
+    "document_structure": {
+      "detail_start_marker": "Detail of Charges"
+    },
+    "line_item_hints": {
+      "subtotal_keywords": [
+        "Subtotal",
+        "Sub Total",
+        "Sub-Total"
+      ],
+      "tax_keywords": [
+        "Tax",
+        "Taxes",
+        "VAT",
+        "Sales Tax"
+      ],
+      "detail_table_anchors": [
+        "Detail of Charges",
+        "Details of Charges and Credits"
+      ],
+      "line_item_granularity": "per_charge_row",
+      "service_id_preference": "first_identifier",
+      "billing_reference_preference": "same_as_service_id",
+      "service_id_column_label": null,
+      "billing_reference_column_label": null,
+      "skip_row_keywords": [
+        "Current Charges",
+        "Finance Charges",
+        "Summary of Charges",
+        "Summary of Charges and Credits",
+        "Service Locations",
+        "Total Charges",
+        "Total Charges Due"
+      ],
+      "table_column_labels": []
+    },
+    "include_zero_amount_line_items": false
+  },
+  "layout_fingerprint": null,
+  "training_config": {
+    "min_validation_successes": 3,
+    "require_reconciliation": true
+  },
+  "owner": "stencil",
+  "created_date": "2026-05-20",
+  "last_updated_date": "2026-06-11"
+}

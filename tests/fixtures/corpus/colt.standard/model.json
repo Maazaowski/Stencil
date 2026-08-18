@@ -1,0 +1,497 @@
+{
+  "model_id": "colt.standard.v1",
+  "supplier_profile_id": "colt.standard.v1",
+  "version": 1,
+  "supplier": "Colt",
+  "output_type": "standard",
+  "status": "candidate",
+  "layout_fingerprint": "sha256:89c7a490970c7c82e702521d9fe57df70ceb28a516da7bdfb12775461a1df134",
+  "layout_family_key": "family:74821d181b23e63efb204e931e0576594a2fc0fa5aa88b94af7755eb3565ca06",
+  "header_fields": {
+    "invoice_number": {
+      "page": 1,
+      "label": "Invoice Number",
+      "value_position": "right",
+      "value_pattern": "([A-Z0-9]+/[A-Z0-9]+)",
+      "date_format": null,
+      "ignore_percent": false,
+      "occurrence": "first",
+      "sample_value": null,
+      "literal": null,
+      "required": true
+    },
+    "invoice_date": {
+      "page": 1,
+      "label": "Invoice Date",
+      "value_position": "right",
+      "value_pattern": "(\\d{2}-[A-Za-z]{3}-\\d{4})",
+      "date_format": "%d-%b-%Y",
+      "ignore_percent": false,
+      "occurrence": "first",
+      "sample_value": null,
+      "literal": null,
+      "required": true
+    },
+    "due_date": {
+      "page": 1,
+      "label": "Due Date",
+      "value_position": "right",
+      "value_pattern": "(\\d{2}-[A-Za-z]{3}-\\d{4})",
+      "date_format": "%d-%b-%Y",
+      "ignore_percent": false,
+      "occurrence": "first",
+      "sample_value": null,
+      "literal": null,
+      "required": true
+    },
+    "account_number": {
+      "page": 1,
+      "label": "Billing Account Number",
+      "value_position": "right",
+      "value_pattern": "([A-Z0-9]-[A-Z0-9]+)",
+      "date_format": null,
+      "ignore_percent": false,
+      "occurrence": "first",
+      "sample_value": null,
+      "literal": null,
+      "required": true
+    },
+    "ban": {
+      "page": 1,
+      "label": "Billing Account Number",
+      "value_position": "right",
+      "value_pattern": "([A-Z0-9]-[A-Z0-9]+)",
+      "date_format": null,
+      "ignore_percent": false,
+      "occurrence": "first",
+      "sample_value": null,
+      "literal": null,
+      "required": true
+    },
+    "currency": {
+      "page": 1,
+      "label": "Currency",
+      "value_position": "right",
+      "value_pattern": null,
+      "date_format": null,
+      "ignore_percent": false,
+      "occurrence": "first",
+      "sample_value": null,
+      "literal": "USD",
+      "required": false
+    }
+  },
+  "region": {
+    "start_anchors": [
+      "SERVICE LEVEL ACTIVITY",
+      "Service ID Description Billing Period Units Total"
+    ],
+    "end_anchors": [
+      "Welcome to Colt"
+    ],
+    "end_scope": "document",
+    "repeat_per_page": true,
+    "include_unanchored_pages": true,
+    "page_scope": null,
+    "columns": [
+      {
+        "name": "service_id",
+        "x0": 30.0,
+        "x1": 105.0,
+        "header_text": "Service ID"
+      },
+      {
+        "name": "description",
+        "x0": 170.0,
+        "x1": 365.0,
+        "header_text": "Description"
+      },
+      {
+        "name": "billing_period",
+        "x0": 480.0,
+        "x1": 610.0,
+        "header_text": "Billing Period"
+      },
+      {
+        "name": "quantity",
+        "x0": 785.0,
+        "x1": 825.0,
+        "header_text": "Units"
+      },
+      {
+        "name": "amount",
+        "x0": 910.0,
+        "x1": 965.0,
+        "header_text": "Total"
+      },
+      {
+        "name": "item_text",
+        "x0": 170.0,
+        "x1": 965.0,
+        "header_text": null
+      },
+      {
+        "name": "total_label",
+        "x0": 735.0,
+        "x1": 830.0,
+        "header_text": null
+      }
+    ]
+  },
+  "row_classifiers": [
+    {
+      "role": "skip",
+      "where": {
+        "row_text": "^(Service ID\\s+Description\\s+Billing Period\\s+Units\\s+Total|Page\\s+\\d+\\s+of\\s+\\d+|Billing Account Number\\b|Invoice Number\\b|Invoice Date\\b|WORKDAY LIMITED,|WORKDAY LIMITED$|Welcome to Colt\\b)",
+        "column": null,
+        "pattern": null,
+        "min_cells": null,
+        "has_amount_in_column": null
+      }
+    },
+    {
+      "role": "item_start",
+      "where": {
+        "row_text": "^\\d{6,}$",
+        "column": "service_id",
+        "pattern": "^\\d{6,}$",
+        "min_cells": null,
+        "has_amount_in_column": null
+      }
+    },
+    {
+      "role": "item_end",
+      "where": {
+        "row_text": "^Total\\s+\\d{6,}\\s+[+-]?[0-9,]+\\.\\d{2}$",
+        "column": null,
+        "pattern": null,
+        "min_cells": null,
+        "has_amount_in_column": "amount"
+      }
+    },
+    {
+      "role": "description_part",
+      "where": {
+        "row_text": "^(Loc\\s+[A-Z]:\\s+.+|.+\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}\\s*-\\s*\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}\\s+\\d+\\s+[+-]?[0-9,]+\\.\\d{2})$",
+        "column": null,
+        "pattern": null,
+        "min_cells": null,
+        "has_amount_in_column": null
+      }
+    },
+    {
+      "role": "skip",
+      "where": {
+        "row_text": "^Total\\s+[A-Z0-9-]+\\s+.*[A-Za-z].*$",
+        "column": null,
+        "pattern": null,
+        "min_cells": null,
+        "has_amount_in_column": null
+      }
+    },
+    {
+      "role": "skip",
+      "where": {
+        "row_text": "^\\d{6,}\\s+\\S+\\s+Loc\\s+[A-Z]:\\s+.*$",
+        "column": null,
+        "pattern": null,
+        "min_cells": null,
+        "has_amount_in_column": null
+      }
+    }
+  ],
+  "grouping": {
+    "mode": "span",
+    "item_role": null,
+    "start_role": "item_start",
+    "end_role": "item_end",
+    "include_end_row": true,
+    "emit": "one_item_per_group",
+    "emit_role": null
+  },
+  "item_fields": [
+    {
+      "name": "service_id",
+      "source": {
+        "rows": "first",
+        "row_role": "item_start",
+        "column": "service_id",
+        "pattern": "^(\\d{6,})$",
+        "join": null,
+        "occurrence": "first"
+      },
+      "transform": {
+        "type": "string",
+        "date_format": null,
+        "value_map": {},
+        "default": null
+      },
+      "literal": null,
+      "same_as": null,
+      "required": true
+    },
+    {
+      "name": "billing_reference",
+      "source": null,
+      "transform": {
+        "type": "string",
+        "date_format": null,
+        "value_map": {},
+        "default": null
+      },
+      "literal": null,
+      "same_as": "service_id",
+      "required": true
+    },
+    {
+      "name": "description",
+      "source": {
+        "rows": "all_in_group",
+        "row_role": "description_part",
+        "column": "item_text",
+        "pattern": null,
+        "join": "; ",
+        "occurrence": "first"
+      },
+      "transform": {
+        "type": "string",
+        "date_format": null,
+        "value_map": {},
+        "default": null
+      },
+      "literal": null,
+      "same_as": null,
+      "required": true
+    },
+    {
+      "name": "charge_type",
+      "source": null,
+      "transform": {
+        "type": "string",
+        "date_format": null,
+        "value_map": {},
+        "default": null
+      },
+      "literal": "recurring",
+      "same_as": null,
+      "required": true
+    },
+    {
+      "name": "amount",
+      "source": {
+        "rows": "last",
+        "row_role": "item_end",
+        "column": "amount",
+        "pattern": "([+-]?[0-9,]+\\.\\d{2})",
+        "join": null,
+        "occurrence": "last"
+      },
+      "transform": {
+        "type": "currency",
+        "date_format": null,
+        "value_map": {},
+        "default": null
+      },
+      "literal": null,
+      "same_as": null,
+      "required": true
+    },
+    {
+      "name": "tax_amount",
+      "source": null,
+      "transform": {
+        "type": "currency",
+        "date_format": null,
+        "value_map": {},
+        "default": null
+      },
+      "literal": null,
+      "same_as": null,
+      "required": false
+    },
+    {
+      "name": "currency",
+      "source": null,
+      "transform": {
+        "type": "string",
+        "date_format": null,
+        "value_map": {},
+        "default": null
+      },
+      "literal": "USD",
+      "same_as": null,
+      "required": true
+    },
+    {
+      "name": "billing_period_start",
+      "source": {
+        "rows": "role",
+        "row_role": "description_part",
+        "column": "billing_period",
+        "pattern": "^(\\d{2} [A-Za-z]{3} \\d{4})\\s*-",
+        "join": null,
+        "occurrence": "last"
+      },
+      "transform": {
+        "type": "date",
+        "date_format": "%d %b %Y",
+        "value_map": {},
+        "default": null
+      },
+      "literal": null,
+      "same_as": null,
+      "required": true
+    },
+    {
+      "name": "billing_period_end",
+      "source": {
+        "rows": "role",
+        "row_role": "description_part",
+        "column": "billing_period",
+        "pattern": "-\\s*(\\d{2} [A-Za-z]{3} \\d{4})$",
+        "join": null,
+        "occurrence": "last"
+      },
+      "transform": {
+        "type": "date",
+        "date_format": "%d %b %Y",
+        "value_map": {},
+        "default": null
+      },
+      "literal": null,
+      "same_as": null,
+      "required": true
+    },
+    {
+      "name": "quantity",
+      "source": {
+        "rows": "role",
+        "row_role": "description_part",
+        "column": "quantity",
+        "pattern": "^(\\d+)$",
+        "join": null,
+        "occurrence": "last"
+      },
+      "transform": {
+        "type": "integer",
+        "date_format": null,
+        "value_map": {},
+        "default": null
+      },
+      "literal": null,
+      "same_as": null,
+      "required": true
+    },
+    {
+      "name": "unit_rate",
+      "source": {
+        "rows": "role",
+        "row_role": "description_part",
+        "column": "amount",
+        "pattern": "([+-]?[0-9,]+\\.\\d{2})",
+        "join": null,
+        "occurrence": "last"
+      },
+      "transform": {
+        "type": "currency",
+        "date_format": null,
+        "value_map": {},
+        "default": null
+      },
+      "literal": null,
+      "same_as": null,
+      "required": true
+    }
+  ],
+  "totals": {
+    "subtotal": {
+      "page": 1,
+      "label": "Current Charges",
+      "value_position": "right",
+      "value_pattern": "([+-]?[0-9,]+\\.\\d{2})",
+      "date_format": null,
+      "ignore_percent": false,
+      "occurrence": "first",
+      "sample_value": null,
+      "literal": null,
+      "required": true
+    },
+    "current_charges": {
+      "page": 1,
+      "label": "Current Charges",
+      "value_position": "right",
+      "value_pattern": "([+-]?[0-9,]+\\.\\d{2})",
+      "date_format": null,
+      "ignore_percent": false,
+      "occurrence": "first",
+      "sample_value": null,
+      "literal": null,
+      "required": true
+    },
+    "tax": {
+      "page": 1,
+      "label": "Total VAT 23.00%",
+      "value_position": "right",
+      "value_pattern": null,
+      "date_format": null,
+      "ignore_percent": false,
+      "occurrence": "first",
+      "sample_value": null,
+      "literal": null,
+      "required": true
+    },
+    "total_due": {
+      "page": 1,
+      "label": "USD",
+      "value_position": "right",
+      "value_pattern": null,
+      "date_format": null,
+      "ignore_percent": false,
+      "occurrence": "first",
+      "sample_value": null,
+      "literal": null,
+      "required": true
+    },
+    "tax_rate": {
+      "page": 1,
+      "label": "VAT Rate",
+      "value_position": "right",
+      "value_pattern": null,
+      "date_format": null,
+      "ignore_percent": false,
+      "occurrence": "first",
+      "sample_value": null,
+      "literal": null,
+      "required": false
+    }
+  },
+  "self_checks": [
+    {
+      "check": "sum_of_items_equals",
+      "field": "subtotal",
+      "tolerance": 0.01
+    }
+  ],
+  "confidence": 0.86,
+  "created_by": "ai_authoring",
+  "created_from_intake": "corpus-authoring-676198608_20240201",
+  "created_at": null,
+  "approved_by": null,
+  "approved_at": null,
+  "notes": "Service-level rows are grouped from a standalone numeric Service ID row through its matching 'Total <service id>' row. Invoice VAT is net-tax treatment: VAT is extracted as invoice-level totals/tax_rate and is not duplicated into service line tax_amount.",
+  "line_item_strategy": {
+    "kind": "profile_groups",
+    "granularity": "per_charge_row",
+    "service_id_preference": "first_identifier",
+    "billing_reference_preference": "same_as_service_id",
+    "anchors": [
+      "SERVICE LEVEL ACTIVITY",
+      "Service Level Activity",
+      "Service Level Activity"
+    ],
+    "skip_keywords": [
+      "Total Current Charges",
+      "Total Amount Due"
+    ]
+  }
+}

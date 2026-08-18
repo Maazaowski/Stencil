@@ -1,0 +1,288 @@
+{
+  "profile_id": "mindtree.timeandmaterial",
+  "version": 2,
+  "status": "training",
+  "layout_description": "LTM/LTIMindtree time-and-material invoice with a summary page and employee-hour detail rows on an Annexure page.",
+  "identity": {
+    "canonical_name": "LTM Limited",
+    "aliases": [
+      "LTIMindtree Ltd",
+      "LTIMindtree Limited",
+      "Formerly LTIMindtree Ltd",
+      "Formerly LTIMindtree Limited",
+      "Mindtree",
+      "MindTree"
+    ]
+  },
+  "classification": {
+    "output_type": "time_and_material"
+  },
+  "output_spec_id": "temforce.time_and_material",
+  "field_schema_id": "invoice.standard",
+  "field_overrides": [
+    {
+      "name": "supplier_name",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "LTM Limited",
+      "required": true,
+      "enum_values": [],
+      "description": "Supplier printed as LTM Limited, with LTIMindtree former-name variants."
+    },
+    {
+      "name": "invoice_number",
+      "scope": "document",
+      "type": "string",
+      "role": "identifier",
+      "label_hint": "Invoice Number",
+      "required": true,
+      "enum_values": [],
+      "description": "Invoice identifier from the summary page."
+    },
+    {
+      "name": "invoice_date",
+      "scope": "document",
+      "type": "date",
+      "role": "none",
+      "label_hint": "Invoice Date",
+      "date_format": "%d/%m/%Y",
+      "required": true,
+      "enum_values": [],
+      "description": "Issue date printed in day/month/year order."
+    },
+    {
+      "name": "billing_period_start",
+      "scope": "document",
+      "type": "date",
+      "role": "none",
+      "label_hint": "Billing Period",
+      "date_format": "%B %Y",
+      "required": true,
+      "enum_values": [],
+      "description": "First calendar day of the printed billing month; drives EXT_STARTDATE."
+    },
+    {
+      "name": "billing_period_end",
+      "scope": "document",
+      "type": "date",
+      "role": "none",
+      "label_hint": "Billing Period",
+      "date_format": "%B %Y",
+      "required": true,
+      "enum_values": [],
+      "description": "Last calendar day of the printed billing month; drives EXT_ENDDATE."
+    },
+    {
+      "name": "account_number",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "MindTreeTimeMaterial",
+      "required": true,
+      "enum_values": [],
+      "description": "Constant downstream account label. Never use the supplier bank Account No.(USD)."
+    },
+    {
+      "name": "po_number",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Purchase Order",
+      "required": true,
+      "enum_values": [],
+      "description": "Customer purchase-order reference."
+    },
+    {
+      "name": "payment_terms",
+      "scope": "document",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Payment Terms",
+      "required": false,
+      "enum_values": [],
+      "description": "Payment terms from the summary page."
+    },
+    {
+      "name": "total_due",
+      "scope": "document",
+      "type": "currency",
+      "role": "total",
+      "label_hint": "Total",
+      "required": true,
+      "enum_values": [],
+      "description": "Invoice total reconciled to the Annexure detail rows."
+    },
+    {
+      "name": "service_id",
+      "scope": "row",
+      "type": "string",
+      "role": "identifier",
+      "label_hint": "Description",
+      "required": true,
+      "enum_values": [],
+      "description": "Leading seven-digit employee/service identifier before the hyphen."
+    },
+    {
+      "name": "billing_reference",
+      "scope": "row",
+      "type": "string",
+      "role": "identifier",
+      "label_hint": "Description",
+      "required": false,
+      "enum_values": [],
+      "description": "Employee name printed after the seven-digit service id and the hyphen in the Description (e.g. 'Brijesh Dekivadiya' from '8065237 - Brijesh Dekivadiya'). Extract the name only, not the leading id, and do not copy service_id."
+    },
+    {
+      "name": "description",
+      "scope": "row",
+      "type": "string",
+      "role": "none",
+      "label_hint": "Description",
+      "required": true,
+      "enum_values": [],
+      "description": "Full Annexure description, including the employee name."
+    },
+    {
+      "name": "amount",
+      "scope": "row",
+      "type": "currency",
+      "role": "amount",
+      "label_hint": "Amount (USD)",
+      "required": true,
+      "enum_values": [],
+      "description": "Annexure row amount."
+    },
+    {
+      "name": "quantity",
+      "scope": "row",
+      "type": "number",
+      "role": "none",
+      "label_hint": "Quantity",
+      "required": true,
+      "enum_values": [],
+      "description": "Billed hours; drives EXT_USAGE."
+    },
+    {
+      "name": "unit_rate",
+      "scope": "row",
+      "type": "currency",
+      "role": "none",
+      "label_hint": "Rate (USD)",
+      "required": true,
+      "enum_values": [],
+      "description": "Hourly rate; drives EXT_USAGECOST."
+    },
+    {
+      "name": "plan_cost",
+      "scope": "row",
+      "type": "currency",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": "Source for EXT_PLANCOST; absent on current LTM invoices and therefore null."
+    },
+    {
+      "name": "equipment_cost",
+      "scope": "row",
+      "type": "currency",
+      "role": "none",
+      "label_hint": null,
+      "required": false,
+      "enum_values": [],
+      "description": "Source for EXT_EQUIPMENTCOST; absent on current LTM invoices and therefore null."
+    }
+  ],
+  "delivery": {
+    "inbound_path": null,
+    "output_path": null,
+    "accounts": [
+      {
+        "label": "MindTreeTimeMaterial",
+        "inbound_path": "/data/Invoices/59958650/MindTreeTimeMaterial/pdf",
+        "output_path": "/data/Invoices/59958650/MindTreeTimeMaterial/xls"
+      }
+    ]
+  },
+  "notes": "Extract only Annexure employee/hour detail rows. Ignore the page-1 'See Annexure below' summary row. Parse service_id from the leading seven digits in Description, and billing_reference from the employee name printed after the '<id> - ' prefix in the same Description (e.g. '8065237 - Brijesh Dekivadiya' -> service_id 8065237, billing_reference 'Brijesh Dekivadiya'). Extract Quantity as hours, Rate (USD) as unit_rate, and Amount (USD) as amount; quantity multiplied by unit_rate must equal amount. Set document account_number to the literal MindTreeTimeMaterial and never use bank Account No.(USD) 000027731. Billing Period is a month/year value: normalize billing_period_start to the first calendar day and billing_period_end to the last calendar day of that month. Extract invoice_date separately from Invoice Date. Both Sales Tax and Integrated GST variants show a printed rate and amount; preserve an explicit 0% rate so EXT_TAX exports numeric zero. Reconcile Annexure amounts to Annexure Total and page-1 Total.",
+  "advanced": {
+    "document_structure": {
+      "detail_start_marker": "Annexure To Invoice No:",
+      "detail_end_marker": "Total :"
+    },
+    "line_item_hints": {
+      "subtotal_keywords": ["Sub Total", "Sub-Total", "Subtotal"],
+      "tax_keywords": ["Sales Tax", "Integrated GST"],
+      "detail_table_anchors": [
+        "Annexure To Invoice No:",
+        "Description",
+        "Quantity",
+        "UOM",
+        "Rate (USD)",
+        "Amount (USD)"
+      ],
+      "line_item_granularity": "per_charge_row",
+      "service_id_preference": "first_identifier",
+      "billing_reference_preference": "none",
+      "service_id_column_label": "Description",
+      "billing_reference_column_label": "Description",
+      "amount_column_label": "Amount (USD)",
+      "tax_amount_column_label": null,
+      "amount_source": "table_charges_column",
+      "tax_source": null,
+      "tax_output_mode": "calculate",
+      "tax_rate_source": "invoice_tax_rate",
+      "service_id_value_pattern": "^(\\d{7})\\b",
+      "billing_reference_value_pattern": "\\d{7}\\s*-\\s*(.+)$",
+      "skip_row_keywords": [
+        "See Annexure below",
+        "HSN/SAC",
+        "Integrated GST",
+        "Sales Tax",
+        "Total :",
+        "Total:",
+        "Amount in words",
+        "IRN:",
+        "Payment Mode",
+        "Bank Details",
+        "Account No.(USD)",
+        "Registered Address",
+        "Remarks:"
+      ],
+      "table_column_labels": [
+        "Description",
+        "Quantity",
+        "UOM",
+        "Rate (USD)",
+        "Amount (USD)"
+      ]
+    },
+    "currency": {
+      "default_code": "USD",
+      "allowed_codes": ["USD"],
+      "aliases": {
+        "US Dollar": "USD"
+      }
+    },
+    "document_field_defaults": {
+      "account_number": "MindTreeTimeMaterial"
+    },
+    "include_zero_amount_line_items": false,
+    "require_line_item_identifier": true
+  },
+  "layout_fingerprint": {
+    "summary_anchors": ["Billing Period", "Purchase Order", "Payment Terms", "Total"],
+    "currency_codes": ["USD"],
+    "ignore_label_patterns": ["(?i)^IRN:?$", "(?i)^HSN/SAC:?$"],
+    "optional_column_patterns": [],
+    "exclude_span_patterns": []
+  },
+  "training_config": {
+    "min_validation_successes": 3,
+    "require_reconciliation": true
+  },
+  "owner": "Temforce",
+  "created_date": "2026-07-13",
+  "last_updated_date": "2026-07-14"
+}

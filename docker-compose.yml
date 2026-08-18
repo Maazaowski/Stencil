@@ -1,0 +1,127 @@
+# ── Stencil ──────────────────────────────────────────
+# This base file is the PRODUCTION topology: no local database — the app
+# connects to the production MySQL given by ST_DATABASE_URL (set in .env).
+#
+#   Prod:  docker compose up -d
+#   Dev:   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#          (the dev overlay adds a local MySQL and repoints ST_DATABASE_URL at it)
+#
+# Stop:    docker compose down
+# Logs:    docker compose logs -f
+# Update:  docker compose pull && docker compose up -d
+# ──────────────────────────────────────────────────────────
+
+services:
+  # ── Redis (Celery broker) ──
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend API ──
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      # ST_DATABASE_URL is NOT set here — it comes from .env (env_file) and must
+      # point at the production MySQL. The dev overlay (docker-compose.dev.yml)
+      # sets ST_DATABASE_URL in `environment:`, which overrides the .env value.
+      ST_REDIS_URL: redis://redis:6379/0
+      ST_CORS_ORIGINS: '["http://localhost:3000","http://frontend:3000"]'
+      ST_DATA_DIR: /data
+      ST_WORK_DIR: /work
+    volumes:
+      # /data = SUPPLIER folders only (each profile's inbound PDFs + delivered
+      #         Excel output, e.g. C:\Stencil\Lumen\1-CNSNUO\{pdf,xls}).
+      # /work = OPERATIONAL state (inbound, processing, completed, exceptions,
+      #         archive) — kept out of the supplier folders.
+      - ${ST_HOST_DATA_DIR:-C:\Stencil}:/data
+      - ${ST_HOST_WORK_DIR:-C:\StencilWork}:/work
+      - /mnt/c/Stencil/Invoices:/data/Invoices
+      - ./supplier_profiles:/app/supplier_profiles
+      # Dev-only Evals: labeled cases (PDF + profile.json + expected/*.xlsx). Add
+      # cases on the host; they appear live in the Evals page (ST_DEBUG only).
+      - ./eval_cases:/app/eval_cases
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn stencil.main:app --host 0.0.0.0 --port 8000"
+
+  # ── Celery Worker ──
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # ST_DATABASE_URL comes from .env (prod); the dev overlay overrides it.
+      ST_REDIS_URL: redis://redis:6379/0
+      ST_DATA_DIR: /data
+      ST_WORK_DIR: /work
+    volumes:
+      - ${ST_HOST_DATA_DIR:-C:\Stencil}:/data
+      - ${ST_HOST_WORK_DIR:-C:\StencilWork}:/work
+      - /mnt/c/Stencil/Invoices:/data/Invoices
+      - ./supplier_profiles:/app/supplier_profiles
+      - ./eval_cases:/app/eval_cases
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: python -m stencil.tasks.worker_main
+
+  # ── File Watcher ──
+  # Watches per-supplier inbound directories for new PDF invoices.
+  # When a PDF is detected, it queues a Celery task for processing.
+  watcher:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # ST_DATABASE_URL comes from .env (prod); the dev overlay overrides it.
+      ST_REDIS_URL: redis://redis:6379/0
+      ST_DATA_DIR: /data
+      ST_WORK_DIR: /work
+    volumes:
+      - ${ST_HOST_DATA_DIR:-C:\Stencil}:/data
+      - ${ST_HOST_WORK_DIR:-C:\StencilWork}:/work
+      - /mnt/c/Stencil/Invoices:/data/Invoices
+      - ./supplier_profiles:/app/supplier_profiles
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: python -m stencil.intake.watcher
+
+  # ── Frontend ──
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://backend:8000
+        # Browser-facing WS endpoint (Next.js rewrites don't proxy WS upgrades).
+        # The backend is published on the host at :8000.
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:8000}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:8000
+      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:8000}
+    depends_on:
+      - backend

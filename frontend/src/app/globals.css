@@ -1,0 +1,305 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================================
+   STENCIL — design tokens
+   ----------------------------------------------------------------------------
+   Ink on substrate, cut in prepress cyan.
+
+   The previous theme was the unmodified shadcn scaffold (radius 0.625rem,
+   destructive 27.325, Geist) with the primary hue nudged to blue-violet. Every
+   value below is a decision, not a default.
+
+   Rules encoded here:
+     - Corners are CUT, not softened. Radius tops out at 3px.
+     - Elevation is hairlines and background steps, not shadows.
+     - Colour is signal. A surface is never coloured for interest.
+     - Mono carries every number, id, path and status.
+   ========================================================================== */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --font-sans: var(--font-ui-sans);
+  --font-mono: var(--font-ui-mono);
+  --font-display: var(--font-ui-display);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Corners are cut. The whole scale fits in 3px. */
+  --radius-sm: 1px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 3px;
+  --radius-2xl: 3px;
+  --radius-3xl: 3px;
+  --radius-4xl: 3px;
+}
+
+:root {
+  /* ---- type ------------------------------------------------------------ */
+  --font-ui-sans: var(--font-plex-sans), system-ui, "Segoe UI", Arial, sans-serif;
+  --font-ui-mono: var(--font-plex-mono), ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-ui-display: var(--font-plex-condensed), var(--font-plex-sans), system-ui, sans-serif;
+
+  /* ---- substrate ------------------------------------------------------- */
+  /* Warm-neutral drafting paper. Deliberately not cream, not blue-grey. */
+  --background: oklch(0.941 0.004 85);
+  --foreground: oklch(0.185 0.006 85);
+
+  --card: oklch(0.975 0.003 85);
+  --card-foreground: oklch(0.185 0.006 85);
+  --popover: oklch(0.985 0.002 85);
+  --popover-foreground: oklch(0.185 0.006 85);
+
+  --secondary: oklch(0.906 0.004 85);
+  --secondary-foreground: oklch(0.30 0.006 85);
+  --muted: oklch(0.916 0.004 85);
+  --muted-foreground: oklch(0.505 0.006 85);
+  --accent: oklch(0.906 0.004 85);
+  --accent-foreground: oklch(0.24 0.006 85);
+
+  /* Two border weights: hairline for structure, strong for enclosure. */
+  --border: oklch(0.855 0.005 85);
+  --border-strong: oklch(0.735 0.006 85);
+  --input: oklch(0.795 0.006 85);
+
+  /* ---- the cut --------------------------------------------------------- */
+  /* Prepress cyan: the non-reproducing blue that marks where material is cut.
+     Reserved for interaction, focus, and the zero-cost model path. */
+  --cut: oklch(0.53 0.098 219);
+  --cut-line: oklch(0.64 0.115 219);
+  --cut-soft: oklch(0.925 0.021 219);
+
+  --primary: var(--cut);
+  --primary-foreground: oklch(0.985 0.002 85);
+  --ring: var(--cut);
+
+  /* ---- signal ---------------------------------------------------------- */
+  /* Desaturated by default. Saturation is reserved for alarm. */
+  --success: oklch(0.475 0.072 158);
+  --success-foreground: oklch(0.975 0.004 158);
+  --success-soft: oklch(0.925 0.022 158);
+
+  --warning: oklch(0.525 0.093 66);
+  --warning-foreground: oklch(0.975 0.004 66);
+  --warning-soft: oklch(0.928 0.030 66);
+
+  --destructive: oklch(0.475 0.135 27);
+  --destructive-foreground: oklch(0.975 0.004 27);
+  --destructive-soft: oklch(0.925 0.028 27);
+
+  /* ---- charts ---------------------------------------------------------- */
+  /* Ink-first: data is graphite, the accent marks the series that matters. */
+  --chart-1: oklch(0.53 0.098 219);
+  --chart-2: oklch(0.42 0.008 85);
+  --chart-3: oklch(0.475 0.072 158);
+  --chart-4: oklch(0.525 0.093 66);
+  --chart-5: oklch(0.63 0.010 85);
+
+  /* ---- shell ----------------------------------------------------------- */
+  --sidebar: oklch(0.185 0.006 85);
+  --sidebar-foreground: oklch(0.885 0.004 85);
+  --sidebar-primary: var(--cut-line);
+  --sidebar-primary-foreground: oklch(0.145 0.006 85);
+  --sidebar-accent: oklch(0.255 0.006 85);
+  --sidebar-accent-foreground: oklch(0.965 0.003 85);
+  --sidebar-border: oklch(0.285 0.006 85);
+  --sidebar-ring: var(--cut-line);
+
+  /* One shadow exists, for genuinely floating layers. Nothing else may use it. */
+  --shadow-overlay: 0 8px 24px -8px oklch(0.185 0.006 85 / 22%);
+}
+
+.dark {
+  --background: oklch(0.163 0.005 85);
+  --foreground: oklch(0.925 0.004 85);
+
+  /* A real step between ground and surface — the old theme used 4%. */
+  --card: oklch(0.216 0.005 85);
+  --card-foreground: oklch(0.925 0.004 85);
+  --popover: oklch(0.238 0.005 85);
+  --popover-foreground: oklch(0.925 0.004 85);
+
+  --secondary: oklch(0.258 0.005 85);
+  --secondary-foreground: oklch(0.925 0.004 85);
+  --muted: oklch(0.248 0.005 85);
+  --muted-foreground: oklch(0.665 0.006 85);
+  --accent: oklch(0.278 0.005 85);
+  --accent-foreground: oklch(0.955 0.003 85);
+
+  --border: oklch(0.298 0.005 85);
+  --border-strong: oklch(0.395 0.006 85);
+  --input: oklch(0.355 0.006 85);
+
+  --cut: oklch(0.745 0.118 219);
+  --cut-line: oklch(0.775 0.125 219);
+  --cut-soft: oklch(0.285 0.043 219);
+
+  --primary: var(--cut);
+  --primary-foreground: oklch(0.163 0.005 85);
+  --ring: var(--cut);
+
+  --success: oklch(0.745 0.098 158);
+  --success-foreground: oklch(0.163 0.005 85);
+  --success-soft: oklch(0.268 0.040 158);
+
+  --warning: oklch(0.795 0.105 74);
+  --warning-foreground: oklch(0.163 0.005 85);
+  --warning-soft: oklch(0.288 0.043 74);
+
+  --destructive: oklch(0.715 0.135 25);
+  --destructive-foreground: oklch(0.163 0.005 85);
+  --destructive-soft: oklch(0.288 0.052 25);
+
+  --chart-1: oklch(0.745 0.118 219);
+  --chart-2: oklch(0.735 0.006 85);
+  --chart-3: oklch(0.745 0.098 158);
+  --chart-4: oklch(0.795 0.105 74);
+  --chart-5: oklch(0.505 0.008 85);
+
+  --sidebar: oklch(0.128 0.005 85);
+  --sidebar-foreground: oklch(0.855 0.004 85);
+  --sidebar-primary: var(--cut-line);
+  --sidebar-primary-foreground: oklch(0.128 0.005 85);
+  --sidebar-accent: oklch(0.228 0.005 85);
+  --sidebar-accent-foreground: oklch(0.965 0.003 85);
+  --sidebar-border: oklch(0.258 0.005 85);
+  --sidebar-ring: var(--cut-line);
+
+  --shadow-overlay: 0 8px 24px -8px oklch(0 0 0 / 55%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-size: 14px; /* dense by default — this is an eight-hour tool */
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  html {
+    @apply font-sans;
+  }
+
+  /* Digits align in columns everywhere they stack. Non-negotiable. */
+  table,
+  .tabular,
+  [data-slot="table"] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Focus is visible, branded, and never removed. */
+  :focus-visible {
+    outline: 2px solid var(--cut);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--cut-soft);
+    color: var(--foreground);
+  }
+}
+
+@layer utilities {
+  /* The stencil bridge as a real device: a rule that breaks where a bridge
+     would sit. Used for section dividers. */
+  .rule-bridged {
+    height: 1px;
+    background: var(--border-strong);
+    -webkit-mask-image: repeating-linear-gradient(
+      to right,
+      #000 0 5rem,
+      transparent 5rem 5.5rem
+    );
+    mask-image: repeating-linear-gradient(to right, #000 0 5rem, transparent 5rem 5.5rem);
+  }
+
+  /* Mono label: the uppercase micro-caption used for every field label. */
+  .label-mono {
+    font-family: var(--font-ui-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+}
+
+/* Indeterminate progress sweep (training progress). Motion budget: linear,
+   no easing flourish. */
+@keyframes progress-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+/* The one signature gesture: when an invoice routes to a saved template and
+   costs nothing, the cut line draws once across the row. 200ms, then gone. */
+@keyframes cut-sweep {
+  from {
+    transform: scaleX(0);
+    opacity: 1;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
