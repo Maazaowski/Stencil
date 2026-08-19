@@ -30,6 +30,14 @@ import { PdfPreviewPanel } from "@/components/pdf-preview-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ModelStatusBadge } from "@/components/status-badge";
@@ -43,9 +51,7 @@ import {
   CheckCircle2,
   Archive,
   Hash,
-  Cpu,
-  BarChart3,
-  Clock,
+  Cpu,  Clock,
   FileText,
   ChevronDown,
   ChevronRight,
@@ -212,42 +218,42 @@ function describeRowMatch(where?: RowMatch): string {
 function HeaderRuleTable({ rules }: { rules: Record<string, HeaderFieldRule> }) {
   return (
     <div className="rounded-md border overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/50">
-            <th className="text-left px-4 py-2 font-medium">Field</th>
-            <th className="text-left px-4 py-2 font-medium">Page</th>
-            <th className="text-left px-4 py-2 font-medium">Label</th>
-            <th className="text-left px-4 py-2 font-medium">Value Position</th>
-            <th className="text-left px-4 py-2 font-medium">Pattern</th>
-            <th className="text-left px-4 py-2 font-medium">Sample</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Field</TableHead>
+            <TableHead>Page</TableHead>
+            <TableHead>Label</TableHead>
+            <TableHead>Value Position</TableHead>
+            <TableHead>Pattern</TableHead>
+            <TableHead>Sample</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {Object.entries(rules).map(([field, rule]) => (
-            <tr key={field} className="border-b">
-              <td className="px-4 py-2 font-medium">{field}</td>
-              <td className="px-4 py-2 text-muted-foreground">{rule.page ?? 1}</td>
-              <td className="px-4 py-2 text-xs">{rule.label ?? "—"}</td>
-              <td className="px-4 py-2">
+            <TableRow key={field} className="border-b">
+              <TableCell className="font-medium">{field}</TableCell>
+              <TableCell className="text-muted-foreground">{rule.page ?? 1}</TableCell>
+              <TableCell className="text-xs">{rule.label ?? "—"}</TableCell>
+              <TableCell>
                 <Badge variant="secondary" className="text-xs">
                   {rule.value_position ?? "right"}
                 </Badge>
-              </td>
-              <td className="px-4 py-2">
+              </TableCell>
+              <TableCell>
                 {(rule.value_pattern ?? rule.pattern) ? (
                   <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
                     {rule.value_pattern ?? rule.pattern}
                   </code>
                 ) : "—"}
-              </td>
-              <td className="px-4 py-2 text-muted-foreground text-xs font-mono">
+              </TableCell>
+              <TableCell className="text-muted-foreground text-xs font-mono">
                 {rule.sample_value ?? "—"}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }
@@ -283,34 +289,34 @@ function WorkbenchTable({
   const colSpan = showOutput ? 5 : 4;
   return (
     <div className="rounded-md border overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/50">
-            <th className="text-left px-4 py-2 font-medium">Invoice</th>
-            <th className="text-left px-4 py-2 font-medium">Pages / Size</th>
-            <th className="text-left px-4 py-2 font-medium">Lines</th>
-            <th className="text-left px-4 py-2 font-medium">Reproduced</th>
-            {showOutput && <th className="text-left px-4 py-2 font-medium">Output</th>}
-            <th className="px-4 py-2" />
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Invoice</TableHead>
+            <TableHead>Pages / Size</TableHead>
+            <TableHead>Lines</TableHead>
+            <TableHead>Reproduced</TableHead>
+            {showOutput && <TableHead>Output</TableHead>}
+            <TableHead />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {rows.map((inv) => (
-            <tr key={inv.intake_id} className="border-b align-top">
-              <td className="px-4 py-2">
+            <TableRow key={inv.intake_id} className="border-b align-top">
+              <TableCell>
                 <Link
                   href={`/invoices/${inv.intake_id}`}
                   className="text-primary hover:underline font-mono text-xs"
                 >
                   {inv.filename ?? inv.intake_id}
                 </Link>
-              </td>
-              <td className="px-4 py-2 text-muted-foreground text-xs whitespace-nowrap">
+              </TableCell>
+              <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
                 {inv.pages != null ? `${inv.pages}p` : "—"}
                 {inv.size_bytes != null ? ` · ${formatBytes(inv.size_bytes)}` : ""}
-              </td>
-              <td className="px-4 py-2 text-muted-foreground">{inv.line_count ?? "—"}</td>
-              <td className="px-4 py-2 max-w-xs">
+              </TableCell>
+              <TableCell className="text-muted-foreground">{inv.line_count ?? "—"}</TableCell>
+              <TableCell className="max-w-xs">
                 {!inv.trained ? (
                   <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
                     <Circle className="h-3.5 w-3.5" /> not trained yet
@@ -325,9 +331,9 @@ function WorkbenchTable({
                     <span>{inv.reason}</span>
                   </span>
                 )}
-              </td>
+              </TableCell>
               {showOutput && (
-                <td className="px-4 py-2 text-xs">
+                <TableCell className="text-xs">
                   {inv.trained ? (
                     <div className="flex flex-col gap-0.5">
                       <a
@@ -346,9 +352,9 @@ function WorkbenchTable({
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
-                </td>
+                </TableCell>
               )}
-              <td className="px-4 py-2 text-right">
+              <TableCell className="text-right">
                 <Button
                   size="sm"
                   variant="ghost"
@@ -357,20 +363,20 @@ function WorkbenchTable({
                 >
                   {group === "train" ? "→ Holdout" : "→ Train"}
                 </Button>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
           {rows.length === 0 && (
-            <tr>
-              <td colSpan={colSpan} className="px-4 py-3 text-muted-foreground text-xs">
+            <TableRow>
+              <TableCell colSpan={colSpan} className="px-4 py-3 text-muted-foreground text-xs">
                 {group === "train"
                   ? "No training invoices yet — upload some above."
                   : "No holdout invoices. Tag one to test whether the model generalizes."}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }
@@ -918,21 +924,13 @@ export default function ModelDetailPage({
         </Card>
       )}
 
-      {/* Summary Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <BarChart3 className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">Confidence</p>
-                <p className="text-lg font-bold">
-                  {((model.confidence ?? 0) * 100).toFixed(1)}%
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/*
+        Summary stats. The "Confidence" card is deliberately gone: the default
+        extraction path stamps that value as a constant, so it measured nothing
+        while looking like a quality score — and at 0.0% it read as broken.
+        Validations below is the real signal.
+      */}
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-3">
@@ -1455,25 +1453,25 @@ export default function ModelDetailPage({
                 versions are kept so you can roll back with one click.
               </p>
               <div className="rounded-md border overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="text-left px-4 py-2 font-medium">Version</th>
-                      <th className="text-left px-4 py-2 font-medium">Status</th>
-                      <th className="text-left px-4 py-2 font-medium">Train / Holdout</th>
-                      <th className="text-left px-4 py-2 font-medium">Validations</th>
-                      <th className="text-left px-4 py-2 font-medium">Approved</th>
-                      <th className="px-4 py-2" />
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Version</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Train / Holdout</TableHead>
+                      <TableHead>Validations</TableHead>
+                      <TableHead>Approved</TableHead>
+                      <TableHead />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {(versions?.versions ?? []).map((v) => (
-                      <tr
+                      <TableRow
                         key={v.model_id}
                         className={`border-b ${v.model_id === model.id ? "bg-muted/30" : ""}`}
                       >
-                        <td className="px-4 py-2 font-medium">v{v.version}</td>
-                        <td className="px-4 py-2">
+                        <TableCell className="font-medium">v{v.version}</TableCell>
+                        <TableCell>
                           <div className="flex items-center gap-2">
                             <ModelStatusBadge status={v.status} />
                             {v.is_live && (
@@ -1482,19 +1480,19 @@ export default function ModelDetailPage({
                               </Badge>
                             )}
                           </div>
-                        </td>
-                        <td className="px-4 py-2 text-muted-foreground text-xs">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">
                           {v.training_invoice_count} / {v.holdout_invoice_count}
-                        </td>
-                        <td className="px-4 py-2 text-muted-foreground text-xs">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">
                           {v.validation_success_count}/{v.validation_attempt_count}
-                        </td>
-                        <td className="px-4 py-2 text-muted-foreground text-xs">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">
                           {v.approved_at
                             ? safeFormatDate(v.approved_at, "MMM d, yyyy")
                             : "—"}
-                        </td>
-                        <td className="px-4 py-2 text-right">
+                        </TableCell>
+                        <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             {v.model_id !== model.id && (
                               <Link href={modelDetailPath(v.model_id)}>
@@ -1515,18 +1513,18 @@ export default function ModelDetailPage({
                               </Button>
                             )}
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
                     {(!versions || versions.versions.length === 0) && (
-                      <tr>
-                        <td colSpan={6} className="px-4 py-3 text-muted-foreground text-xs">
+                      <TableRow>
+                        <TableCell colSpan={6} className="px-4 py-3 text-muted-foreground text-xs">
                           No versions found.
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     )}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
@@ -1712,28 +1710,28 @@ export default function ModelDetailPage({
             </div>
             {tableRules.columns && tableRules.columns.length > 0 && (
               <div className="rounded-md border overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="text-left px-4 py-2 font-medium">Column</th>
-                      <th className="text-left px-4 py-2 font-medium">Index</th>
-                      <th className="text-left px-4 py-2 font-medium">Type</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Column</TableHead>
+                      <TableHead>Index</TableHead>
+                      <TableHead>Type</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {tableRules.columns.map((col, idx) => (
-                      <tr key={idx} className="border-b">
-                        <td className="px-4 py-2 font-medium">{col.name ?? "—"}</td>
-                        <td className="px-4 py-2 text-muted-foreground">{col.index ?? "—"}</td>
-                        <td className="px-4 py-2">
+                      <TableRow key={idx} className="border-b">
+                        <TableCell className="font-medium">{col.name ?? "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{col.index ?? "—"}</TableCell>
+                        <TableCell>
                           <Badge variant="outline" className="text-xs">
                             {col.data_type ?? "string"}
                           </Badge>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>
@@ -1774,28 +1772,28 @@ export default function ModelDetailPage({
 
             {region.columns && region.columns.length > 0 && (
               <div className="rounded-md border overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="text-left px-4 py-2 font-medium">Column</th>
-                      <th className="text-left px-4 py-2 font-medium">Header Text</th>
-                      <th className="text-left px-4 py-2 font-medium">X Range (0–1000)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Column</TableHead>
+                      <TableHead>Header Text</TableHead>
+                      <TableHead>X Range (0–1000)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {region.columns.map((col, idx) => (
-                      <tr key={idx} className="border-b">
-                        <td className="px-4 py-2 font-medium">{col.name ?? "—"}</td>
-                        <td className="px-4 py-2 text-muted-foreground text-xs">{col.header_text ?? "—"}</td>
-                        <td className="px-4 py-2 font-mono text-xs">
+                      <TableRow key={idx} className="border-b">
+                        <TableCell className="font-medium">{col.name ?? "—"}</TableCell>
+                        <TableCell className="text-muted-foreground text-xs">{col.header_text ?? "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">
                           {col.x0 != null && col.x1 != null
                             ? `${Math.round(col.x0)} – ${Math.round(col.x1)}`
                             : "—"}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>
@@ -1811,26 +1809,26 @@ export default function ModelDetailPage({
           <CardContent className="space-y-4">
             {rowClassifiers.length > 0 && (
               <div className="rounded-md border overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="text-left px-4 py-2 font-medium">Role</th>
-                      <th className="text-left px-4 py-2 font-medium">When</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Role</TableHead>
+                      <TableHead>When</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {rowClassifiers.map((rc, idx) => (
-                      <tr key={idx} className="border-b">
-                        <td className="px-4 py-2">
+                      <TableRow key={idx} className="border-b">
+                        <TableCell>
                           <Badge variant="secondary" className="text-xs">{rc.role}</Badge>
-                        </td>
-                        <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">
                           {describeRowMatch(rc.where)}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
             {grouping && (
@@ -1878,29 +1876,29 @@ export default function ModelDetailPage({
           </CardHeader>
           <CardContent>
             <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left px-4 py-2 font-medium">Field</th>
-                    <th className="text-left px-4 py-2 font-medium">Source</th>
-                    <th className="text-left px-4 py-2 font-medium">Type</th>
-                    <th className="text-left px-4 py-2 font-medium">Value Map</th>
-                    <th className="text-left px-4 py-2 font-medium">Required</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Field</TableHead>
+                    <TableHead>Source</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Value Map</TableHead>
+                    <TableHead>Required</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {itemFields.map((field, idx) => (
-                    <tr key={idx} className="border-b">
-                      <td className="px-4 py-2 font-medium">{field.name}</td>
-                      <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
+                    <TableRow key={idx} className="border-b">
+                      <TableCell className="font-medium">{field.name}</TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">
                         {describeFieldSource(field)}
-                      </td>
-                      <td className="px-4 py-2">
+                      </TableCell>
+                      <TableCell>
                         <Badge variant="outline" className="text-xs">
                           {field.transform?.type ?? "string"}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-2">
+                      </TableCell>
+                      <TableCell>
                         {field.transform?.value_map &&
                         Object.keys(field.transform.value_map).length > 0 ? (
                           <div className="flex flex-wrap gap-1">
@@ -1911,14 +1909,14 @@ export default function ModelDetailPage({
                             ))}
                           </div>
                         ) : "—"}
-                      </td>
-                      <td className="px-4 py-2 text-xs text-muted-foreground">
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
                         {field.required ? "Yes" : "No"}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>

@@ -6,6 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ExtractionPathBadge } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -29,29 +38,8 @@ import { PageHeader } from "@/components/page-header";
 
 // ── Status color helpers ────────────────────────────────────
 
-const stepColors: Record<string, string> = {
-  intake: "bg-primary/12 text-primary border-primary/30",
-  fingerprint: "bg-primary/12 text-primary border-primary/30",
-  routing: "bg-primary/12 text-primary border-primary/30",
-  classification: "bg-primary/12 text-primary border-primary/30",
-  ai_extraction: "bg-warning/12 text-warning border-warning/30",
-  reconciliation: "bg-warning/12 text-warning border-warning/30",
-  output: "bg-success/12 text-success border-success/30",
-  output_copy: "bg-success/12 text-success border-success/30",
-  pipeline: "bg-destructive/12 text-destructive border-destructive/30",
-};
 
-const statusColors: Record<string, string> = {
-  completed: "bg-success/12 text-success border-success/30",
-  failed: "bg-destructive/12 text-destructive border-destructive/30",
-  low_confidence: "bg-warning/12 text-warning border-warning/30",
-  fallback_to_ai: "bg-warning/12 text-warning border-warning/30",
-  running: "bg-primary/12 text-primary border-primary/30",
-};
 
-const pathColors: Record<string, string> = {
-  ai: "bg-warning/12 text-warning border-warning/30",
-};
 
 // ── Tabs ────────────────────────────────────────────────────
 
@@ -188,63 +176,67 @@ function ProcessingLogsTab() {
         </Card>
       ) : (
         <>
-          <div className="rounded-md border overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left px-4 py-2.5 font-medium">Timestamp</th>
-                  <th className="text-left px-4 py-2.5 font-medium">Intake ID</th>
-                  <th className="text-left px-4 py-2.5 font-medium">Step</th>
-                  <th className="text-left px-4 py-2.5 font-medium">Status</th>
-                  <th className="text-left px-4 py-2.5 font-medium">Message</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data && data.items.length > 0 ? (
-                  data.items.map((log) => (
-                    <tr key={log.id} className="border-b hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
-                        {format(new Date(log.timestamp), "MMM d, HH:mm:ss")}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <Link
-                          href={`/invoices/${log.intake_id}`}
-                          className="font-mono text-xs text-primary hover:underline"
-                        >
-                          {log.intake_id.slice(0, 12)}...
-                        </Link>
-                      </td>
-                      <td className="px-4 py-2.5">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Timestamp</TableHead>
+                <TableHead>Intake</TableHead>
+                <TableHead>Step</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Message</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data && data.items.length > 0 ? (
+                data.items.map((log) => (
+                  <TableRow key={log.id}>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      {format(new Date(log.timestamp), "dd MMM HH:mm:ss")}
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/invoices/${log.intake_id}`}
+                        className="font-mono text-xs text-primary hover:underline"
+                      >
+                        {log.intake_id.slice(0, 8)}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="neutral">{log.step}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {/* Silence for the ordinary case — a log full of green
+                          "completed" tags is a log you stop reading. */}
+                      {log.status === "completed" ? (
+                        <span className="text-muted-foreground/70">—</span>
+                      ) : (
                         <Badge
-                          variant="outline"
-                          className={`text-xs ${stepColors[log.step] ?? ""}`}
-                        >
-                          {log.step}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <Badge
-                          variant="outline"
-                          className={`text-xs ${statusColors[log.status] ?? ""}`}
+                          variant={
+                            log.status === "failed"
+                              ? "destructive"
+                              : log.status === "skipped"
+                                ? "neutral"
+                                : "warning"
+                          }
                         >
                           {log.status}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-md truncate">
-                        {log.message ?? "—"}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                      No processing logs found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="max-w-md truncate text-xs text-muted-foreground">
+                      {log.message ?? "—"}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-auto py-8 text-center text-muted-foreground">
+                    No processing logs found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
 
           {/* Pagination */}
           {data && data.pages > 1 && (
@@ -381,96 +373,76 @@ function TokenUsageTab() {
         </div>
       ) : (
         <>
-          <div className="rounded-md border overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left px-4 py-2.5 font-medium">Date</th>
-                  <th className="text-left px-4 py-2.5 font-medium">Intake</th>
-                  <th className="text-left px-4 py-2.5 font-medium">Supplier</th>
-                  <th className="text-left px-4 py-2.5 font-medium">Path</th>
-                  <th className="text-left px-4 py-2.5 font-medium">AI Model</th>
-                  <th className="text-right px-4 py-2.5 font-medium">Tokens In</th>
-                  <th className="text-right px-4 py-2.5 font-medium">Tokens Out</th>
-                  <th className="text-right px-4 py-2.5 font-medium">Cost</th>
-                  <th className="text-right px-4 py-2.5 font-medium">Duration</th>
-                  <th className="text-right px-4 py-2.5 font-medium">Confidence</th>
-                </tr>
-              </thead>
-              <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Intake</TableHead>
+                <TableHead>Supplier</TableHead>
+                <TableHead>Cost path</TableHead>
+                <TableHead>AI model</TableHead>
+                <TableHead numeric>Tokens in</TableHead>
+                <TableHead numeric>Tokens out</TableHead>
+                <TableHead numeric>Spend</TableHead>
+                <TableHead numeric>Duration</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
                 {jobs && jobs.items.length > 0 ? (
                   jobs.items.map((job) => (
-                    <tr key={job.id} className="border-b hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
-                        {format(new Date(job.created_at), "MMM d, HH:mm")}
-                      </td>
-                      <td className="px-4 py-2.5">
+                    <TableRow key={job.id}>
+                      <TableCell className="font-mono text-xs text-muted-foreground">
+                        {format(new Date(job.created_at), "dd MMM HH:mm")}
+                      </TableCell>
+                      <TableCell>
                         <Link
                           href={`/invoices/${job.intake_id}`}
                           className="font-mono text-xs text-primary hover:underline"
                         >
-                          {job.intake_id.slice(0, 12)}...
+                          {job.intake_id.slice(0, 8)}
                         </Link>
-                      </td>
-                      <td className="px-4 py-2.5 text-xs">
+                      </TableCell>
+                      <TableCell className="max-w-[180px] truncate">
                         {job.supplier_name ?? "—"}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <Badge
-                          variant="outline"
-                          className={`text-xs ${pathColors[job.extraction_path] ?? ""}`}
-                        >
-                          {job.extraction_path}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                      </TableCell>
+                      <TableCell>
+                        {/* The accent marks the free path — that is the product
+                            working. Paid is the unremarkable case. */}
+                        <ExtractionPathBadge path={job.extraction_path} />
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
                         {job.ai_model_name ?? "—"}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-right font-mono">
+                      </TableCell>
+                      <TableCell numeric className="text-xs">
                         {job.tokens_input > 0 ? job.tokens_input.toLocaleString() : "—"}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-right font-mono">
+                      </TableCell>
+                      <TableCell numeric className="text-xs">
                         {job.tokens_output > 0 ? job.tokens_output.toLocaleString() : "—"}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-right font-mono">
+                      </TableCell>
+                      <TableCell numeric className="text-xs">
                         {job.estimated_cost_usd > 0
                           ? `$${job.estimated_cost_usd.toFixed(4)}`
                           : "—"}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-right font-mono">
+                      </TableCell>
+                      <TableCell numeric className="text-xs">
                         {job.extraction_duration_ms > 0
                           ? `${(job.extraction_duration_ms / 1000).toFixed(1)}s`
                           : "—"}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-right">
-                        {job.overall_confidence > 0 ? (
-                          <span
-                            className={
-                              job.overall_confidence >= 0.9
-                                ? "text-success"
-                                : job.overall_confidence >= 0.75
-                                  ? "text-warning"
-                                  : "text-destructive"
-                            }
-                          >
-                            {(job.overall_confidence * 100).toFixed(0)}%
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">
+                  <TableRow>
+                    <TableCell
+                      colSpan={9}
+                      className="h-auto py-8 text-center text-muted-foreground"
+                    >
                       No extraction jobs found.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
 
           {/* Pagination */}
           {jobs && jobs.pages > 1 && (
