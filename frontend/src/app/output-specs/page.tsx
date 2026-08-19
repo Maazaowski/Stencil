@@ -59,6 +59,7 @@ export default function OutputSpecsPage() {
         <Input
           className="pl-9"
           placeholder="Search output specs..."
+            aria-label="Search output specs"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -91,8 +92,15 @@ export default function OutputSpecsPage() {
                     </Button>
                   </Link>
                   {spec.spec_id !== "temforce.standard" && (
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(spec.spec_id)}>
-                      <Trash2 className="h-3.5 w-3.5" />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(spec.spec_id)}
+                      // Icon-only AND destructive: a screen reader announced
+                      // this as just "button".
+                      aria-label={`Delete output spec ${spec.name || spec.spec_id}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                     </Button>
                   )}
                 </div>

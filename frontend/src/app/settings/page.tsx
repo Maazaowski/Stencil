@@ -93,6 +93,7 @@ function ProviderKeyRow({
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder={`${label} API key`}
+            aria-label={`${label} API key`}
             className="h-8 w-64"
             autoComplete="off"
           />

@@ -127,24 +127,33 @@ export default function UsersPage() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Email</label>
+              <label className="text-sm font-medium" htmlFor="new-user-email">
+                Email
+              </label>
               <Input
+                id="new-user-email"
                 value={newUser.email}
                 onChange={(e) => setNewUser((prev) => ({ ...prev, email: e.target.value }))}
                 type="email"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Display name</label>
+              <label className="text-sm font-medium" htmlFor="new-user-name">
+                Display name
+              </label>
               <Input
+                id="new-user-name"
                 value={newUser.username}
                 onChange={(e) => setNewUser((prev) => ({ ...prev, username: e.target.value }))}
               />
               <p className="text-xs text-muted-foreground">Optional.</p>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Temporary password</label>
+              <label className="text-sm font-medium" htmlFor="new-user-password">
+                Temporary password
+              </label>
               <Input
+                id="new-user-password"
                 value={newUser.password}
                 onChange={(e) => setNewUser((prev) => ({ ...prev, password: e.target.value }))}
                 type="password"
@@ -218,6 +227,7 @@ export default function UsersPage() {
                     <span className="truncate font-medium">{user.email}</span>
                     <Input
                       defaultValue={user.username ?? ""}
+                      aria-label={`Display name for ${user.email}`}
                       className="h-8"
                       onBlur={(e) => {
                         const username = e.target.value.trim();
@@ -252,6 +262,7 @@ export default function UsersPage() {
                       <Input
                         className="h-8"
                         type="password"
+                        aria-label={`New password for ${user.email}`}
                         value={passwords[user.id] ?? ""}
                         onChange={(e) =>
                           setPasswords((prev) => ({ ...prev, [user.id]: e.target.value }))

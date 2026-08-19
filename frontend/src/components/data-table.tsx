@@ -28,6 +28,12 @@ interface DataTableProps<TData, TValue> {
   onPageChange?: (page: number) => void;
   onRowClick?: (row: TData) => void;
   emptyState?: React.ReactNode;
+  /**
+   * Phone rendering for a single record. When supplied, widths below `md` swap
+   * the table for a stacked list — a nine-column table you scroll sideways on a
+   * phone is a squeezed desktop, not a mobile view. Triage, not authoring.
+   */
+  mobileRow?: (row: TData) => React.ReactNode;
 }
 
 export function DataTable<TData, TValue>({
@@ -38,6 +44,7 @@ export function DataTable<TData, TValue>({
   onPageChange,
   onRowClick,
   emptyState,
+  mobileRow,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -53,7 +60,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border">
+      <div className={mobileRow ? "hidden md:block" : undefined}>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -102,6 +109,29 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
+
+      {/* Stacked records for phone widths — read and approve, not author. */}
+      {mobileRow && (
+        <div className="flex flex-col gap-px border border-border-strong bg-border md:hidden">
+          {table.getRowModel().rows.length ? (
+            table.getRowModel().rows.map((row) => (
+              <button
+                key={row.id}
+                type="button"
+                onClick={() => onRowClick?.(row.original)}
+                disabled={!onRowClick}
+                className="bg-card px-3 py-2.5 text-left transition-colors enabled:hover:bg-accent disabled:cursor-default"
+              >
+                {mobileRow(row.original)}
+              </button>
+            ))
+          ) : (
+            <div className="bg-card px-3 py-8 text-center text-muted-foreground">
+              {emptyState ?? "No results."}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && onPageChange && (

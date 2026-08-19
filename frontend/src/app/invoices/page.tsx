@@ -447,6 +447,28 @@ function InvoicesPageContent() {
           totalPages={data?.pages ?? 1}
           onPageChange={(p) => setParams({ page: String(p) })}
           onRowClick={(row) => router.push(`/invoices/${row.id}`)}
+          // Phone triage: the four things that decide whether this invoice needs
+          // you. The other seven columns are desk work.
+          mobileRow={(row) => (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate text-[0.8125rem] font-medium">
+                  {row.supplier_name ?? "Unknown supplier"}
+                </span>
+                <StatusBadge status={row.status} />
+              </div>
+              <span className="truncate font-mono text-[0.6875rem] text-muted-foreground">
+                {row.original_filename}
+              </span>
+              <div className="flex items-center gap-3 font-mono text-[0.6875rem]">
+                <ReconciliationBadge
+                  isReconciled={row.is_reconciled}
+                  variance={row.reconciliation_variance}
+                />
+                {row.extraction_path && <ExtractionPathBadge path={row.extraction_path} />}
+              </div>
+            </div>
+          )}
           emptyState={
             hasFilters ? (
               <EmptyState

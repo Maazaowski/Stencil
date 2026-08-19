@@ -152,7 +152,7 @@ export default function UploadPage() {
             )}
             onClick={open}
           >
-            <input {...getInputProps()} />
+            <input {...getInputProps()} aria-label="Choose invoice PDFs to upload" />
             <Upload className="mb-3 h-10 w-10 text-muted-foreground" />
             {isDragActive ? (
               <p className="text-sm font-medium text-primary">

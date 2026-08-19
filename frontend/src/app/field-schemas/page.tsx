@@ -59,6 +59,7 @@ export default function FieldSchemasPage() {
         <Input
           className="pl-9"
           placeholder="Search schemas..."
+            aria-label="Search field schemas"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
