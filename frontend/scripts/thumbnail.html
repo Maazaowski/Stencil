@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Built in the product's own tokens — the thumbnail IS the design system. */
+  :root{
+    --paper:#EDECE8; --sheet:#F7F6F3; --band:#E4E2DD;
+    --ink:#16150F; --ink-2:#45443C; --ink-3:#74736A;
+    --rule:#CFCDC5; --rule-hard:#A8A69C; --cut:#007A94;
+    --warn:#96601A;
+    --mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+    --sans:"IBM Plex Sans", system-ui, "Segoe UI", Arial, sans-serif;
+    --cond:"IBM Plex Sans Condensed", var(--sans);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1200px;height:900px}
+  body{
+    background:var(--paper); color:var(--ink); font-family:var(--sans);
+    display:flex; flex-direction:column; overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .top{padding:60px 60px 56px; flex:1 1 auto; display:flex; flex-direction:column; justify-content:center}
+
+  .brand{display:flex;align-items:center;gap:14px;margin-bottom:44px}
+  .brand svg{width:40px;height:40px}
+  .brand .name{
+    font-family:var(--cond); font-size:21px; font-weight:700;
+    letter-spacing:.24em; text-transform:uppercase;
+  }
+
+  h1{
+    font-size:80px; line-height:.96; letter-spacing:-.038em; font-weight:700;
+    text-wrap:balance;
+  }
+  h1 .cut{color:var(--cut)}
+
+  .sub{
+    margin-top:26px; font-size:24px; line-height:1.42; color:var(--ink-2);
+    max-width:42ch;
+  }
+
+  .tags{margin-top:44px; display:flex; gap:12px; flex-wrap:wrap}
+  .tag{
+    font-family:var(--mono); font-size:13px; letter-spacing:.1em; text-transform:uppercase;
+    border:1px solid var(--rule-hard); color:var(--ink-2);
+    padding:7px 11px; border-radius:2px; background:var(--sheet);
+  }
+
+  /* A real slice of the interface, not a decorative mock. */
+  .strip{background:var(--sheet); border-top:1px solid var(--rule-hard); flex:none}
+  table{width:100%;border-collapse:collapse;font-size:17px;font-variant-numeric:tabular-nums}
+  th{
+    font-family:var(--mono); font-size:11.5px; letter-spacing:.13em; text-transform:uppercase;
+    color:var(--ink-3); font-weight:500; text-align:left;
+    padding:11px 30px; background:var(--band); border-bottom:1px solid var(--rule-hard);
+  }
+  td{padding:15px 30px; border-bottom:1px solid var(--rule); white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  .chip{
+    display:inline-block; font-family:var(--mono); font-size:11.5px; letter-spacing:.08em;
+    text-transform:uppercase; padding:3px 9px; border-radius:2px; border:1px solid;
+  }
+  .chip.warn{color:var(--warn); border-color:rgba(150,96,26,.35); background:rgba(150,96,26,.12)}
+  .chip.free{color:var(--cut); border-color:rgba(0,122,148,.35); background:rgba(0,122,148,.12)}
+  .chip.paid{color:var(--ink-3); border-color:var(--rule-hard); background:#E9E7E2}
+  .mono{font-family:var(--mono); font-size:15.5px; color:var(--ink-3)}
+  .muted{color:var(--ink-3)}
+  .num{text-align:right; font-family:var(--mono)}
+  .warnnum{color:var(--warn); font-weight:500}
+  .oknum{color:var(--ink-3)}
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none">
+        <g fill="#16150F">
+          <path d="M3 3H10V7H7V10H3V3Z"/>
+          <path d="M21 3V10H17V7H14V3H21Z"/>
+          <path d="M21 21H14V17H17V14H21V21Z"/>
+          <path d="M3 21V14H7V17H10V21H3Z"/>
+        </g>
+        <rect x="7" y="11" width="10" height="2" fill="#007A94"/>
+      </svg>
+      <span class="name">Stencil</span>
+    </div>
+
+    <h1>Cut the template once.<br><span class="cut">Reuse it forever.</span></h1>
+
+    <p class="sub">
+      An AI layer that reads supplier invoices, learns each layout once,
+      then replays it on every future invoice at zero model cost.
+    </p>
+
+    <div class="tags">
+      <span class="tag">Next.js · TypeScript</span>
+      <span class="tag">FastAPI · Python</span>
+      <span class="tag">Design system</span>
+      <span class="tag">Full rebuild</span>
+    </div>
+  </div>
+
+  <div class="strip">
+    <table>
+      <thead>
+        <tr>
+          <th>Status</th><th>Supplier</th><th>Invoice</th>
+          <th style="text-align:right">Reconciled</th><th>Cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="chip warn">Variance</span></td>
+          <td><strong>Northwind Telecom</strong></td>
+          <td class="mono">invoice-2026-01-5368.pdf</td>
+          <td class="num warnnum">+1,226.06</td>
+          <td><span class="chip paid">Paid</span></td>
+        </tr>
+        <tr>
+          <td><span class="muted">—</span></td>
+          <td><strong>Meridian Fibre</strong></td>
+          <td class="mono">invoice-2026-02-4471.pdf</td>
+          <td class="num oknum">balanced</td>
+          <td><span class="chip free">Free</span></td>
+        </tr>
+        <tr>
+          <td><span class="muted">—</span></td>
+          <td><strong>Cascade Networks</strong></td>
+          <td class="mono">invoice-2026-02-8802.pdf</td>
+          <td class="num oknum">balanced</td>
+          <td><span class="chip free">Free</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

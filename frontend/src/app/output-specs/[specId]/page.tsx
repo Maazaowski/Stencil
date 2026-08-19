@@ -4,7 +4,7 @@ import { use, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { toastErrorMessage } from "@/lib/api/errors";
+import { formatApiError } from "@/lib/api/errors";
 import {
   useCloneOutputSpec,
   useCreateOutputSpec,
@@ -13,7 +13,7 @@ import {
 } from "@/hooks/use-output-specs";
 import { useFieldSchemas, useFieldSchema } from "@/hooks/use-field-schemas";
 import { PageHeader } from "@/components/page-header";
-import { ErrorState, LoadingState } from "@/components/states";
+import { ErrorState, InlineError, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,6 +59,7 @@ export default function OutputSpecEditorPage({
   const updateSpec = useUpdateOutputSpec();
   const cloneSpec = useCloneOutputSpec();
   const [spec, setSpec] = useState<OutputSpec>(emptySpec());
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [referenceSchemaId, setReferenceSchemaId] = useState("invoice.standard");
   const [startMode, setStartMode] = useState<"blank" | "clone_temforce">("blank");
   const { data: referenceSchema } = useFieldSchema(referenceSchemaId);
@@ -86,8 +87,9 @@ export default function OutputSpecEditorPage({
   }
 
   async function handleSave() {
+    setSaveError(null);
     if (!spec.spec_id.trim()) {
-      toast.error("Spec ID is required.");
+      setSaveError("Spec ID is required.");
       return;
     }
     try {
@@ -108,7 +110,7 @@ export default function OutputSpecEditorPage({
         toast.success("Output spec saved.");
       }
     } catch (err) {
-      toast.error(toastErrorMessage(err, "Failed to save output spec."));
+      setSaveError(formatApiError(err, "Output spec could not be saved."));
     }
   }
 
@@ -143,6 +145,9 @@ export default function OutputSpecEditorPage({
           </div>
         }
       />
+
+      {/* Stays put next to Save — a vanished failure reads as success. */}
+      <InlineError message={saveError} onDismiss={() => setSaveError(null)} />
 
       <Card>
         <CardHeader><CardTitle>Spec identity</CardTitle></CardHeader>

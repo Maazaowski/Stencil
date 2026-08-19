@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, X } from "lucide-react";
 
 /**
  * Shared data-surface states.
@@ -113,6 +113,54 @@ export function LoadingState({
           <div className="h-2.5 w-16 bg-muted/50" />
         </div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * An error that stays put.
+ *
+ * Failures used to surface as `toast.error("Failed to save profile.")` — a
+ * message that removes itself after four seconds. On a long form that is close
+ * to silent: the user sees a flash, assumes it saved, and navigates away having
+ * lost the edit. Anything the user must act on renders here instead, beside the
+ * control that failed, until they resolve or dismiss it.
+ */
+export function InlineError({
+  message,
+  onDismiss,
+  className,
+}: {
+  message?: string | null;
+  onDismiss?: () => void;
+  className?: string;
+}) {
+  if (!message) return null;
+  return (
+    <div
+      role="alert"
+      className={cn(
+        "flex items-start gap-3 border border-destructive/45 bg-destructive/8 px-3 py-2",
+        className,
+      )}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="label-mono block text-destructive">Not saved</span>
+        {/* API messages can be multi-line (pydantic validation lists). */}
+        <span className="mt-0.5 block whitespace-pre-line text-[0.8125rem] text-foreground">
+          {message}
+        </span>
+      </span>
+      {onDismiss && (
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Dismiss error"
+          className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <X className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 }

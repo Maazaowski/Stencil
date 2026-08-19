@@ -57,3 +57,42 @@ test.describe("settings", () => {
     expect(await unnamedControls(page)).toEqual([]);
   });
 });
+
+test.describe("save failures", () => {
+  test("a failed save reports inline and stays put", async ({ page }) => {
+    await page.goto("/settings");
+    await expect(page.getByRole("heading", { name: /settings/i, level: 1 })).toBeVisible();
+    await expect(page.locator('button[role="combobox"]').first()).toBeVisible();
+
+    // Force the save to fail.
+    await page.route("**/api/v1/settings", async (route) => {
+      if (route.request().method() === "PUT") {
+        await route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ detail: "Provider is unreachable." }),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    // Dirty the form so Save enables, then save.
+    const timeout = page.getByLabel(/timeout/i).first();
+    await timeout.fill("120");
+    await page.getByRole("button", { name: /save/i }).first().click();
+
+    // The failure is inline, carries the API's reason, and does NOT vanish.
+    const err = page.getByRole("alert").filter({ hasText: /not saved/i });
+    await expect(err).toBeVisible();
+    await expect(err).toContainText("Provider is unreachable.");
+
+    // A toast would be gone by now; this must still be here.
+    await page.waitForTimeout(5000);
+    await expect(err).toBeVisible();
+
+    // And it is dismissible.
+    await err.getByRole("button", { name: /dismiss/i }).click();
+    await expect(err).not.toBeVisible();
+  });
+});

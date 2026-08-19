@@ -46,6 +46,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { usePurgeAllInvoices } from "@/hooks/use-invoices";
+import { InlineError } from "@/components/states";
+import { formatApiError } from "@/lib/api/errors";
 
 const PROVIDER_LABELS: Record<string, string> = {
   openai: "OpenAI (GPT)",
@@ -141,6 +143,7 @@ export default function SettingsPage() {
   const [dirty, setDirty] = useState(false);
   const [purgeOpen, setPurgeOpen] = useState(false);
   const [purgeConfirm, setPurgeConfirm] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Populate form when settings load
   useEffect(() => {
@@ -222,12 +225,15 @@ export default function SettingsPage() {
   }
 
   async function handleSave() {
+    setSaveError(null);
     try {
       await updateSettings.mutateAsync(form);
-      toast.success("Settings saved successfully.");
+      toast.success("Settings saved.");
       setDirty(false);
-    } catch {
-      toast.error("Failed to save settings.");
+    } catch (err) {
+      // Inline, not a toast: a settings page is long, and a save failure the
+      // user scrolls past is a change they believe they made.
+      setSaveError(formatApiError(err, "Settings could not be saved."));
     }
   }
 
@@ -298,6 +304,8 @@ export default function SettingsPage() {
         }
       />
 
+      {/* Sits directly under the Save button that produced it. */}
+      <InlineError message={saveError} onDismiss={() => setSaveError(null)} />
 
       {/* Folder Paths (read-only) */}
       <Card>
