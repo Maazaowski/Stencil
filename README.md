@@ -370,6 +370,12 @@ After processing, each invoice gets a package in `{work_dir}/completed/{intake_i
 | `canonical_invoice.json` | Full structured extraction (header, line items, totals, metadata) |
 | `extraction_log.json` | Processing metadata (path used, tokens, cost, confidence, warnings) |
 | `manifest.json` | Ready signal for Temforce Bot Agent (written last) |
+
+The XLSX is also copied into the profile's configured `output_path` under **the same
+name**, so one account's invoices no longer collide there. If two different invoices
+would land on the same filename the copy is delivered as `name (2).xlsx` and a
+`pipeline.output.name_collision` warning is logged — a deliverable is never silently
+replaced.
 | `model_review/` | Optional comparison files when training or validating models (`ai_output.xlsx`, `model_output.xlsx`, `training_report.json`, `execution_error.txt`) |
 
 Failed or uncertain invoices go to `{work_dir}/exceptions/{intake_id}/` with an `error_log.json` explaining why.

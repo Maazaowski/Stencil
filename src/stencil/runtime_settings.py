@@ -51,7 +51,6 @@ MUTABLE_SETTING_NAMES = (
     "profile_discovery_historical_id_coverage",
     "worker_concurrency",
     "confidence_threshold",
-    "model_confidence_threshold",
     "reconciliation_variance_threshold",
     "model_validation_required_successes",
     "model_validation_max_failures",

@@ -15,12 +15,11 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-import fitz  # pymupdf
 import structlog
 
 from stencil import runtime_settings
 from stencil.ai_debug import traced_chat_completion
-from stencil.extraction.ai_json import AIJSONError, completion_to_json
+from stencil.extraction.ai_json import AIJSONError, TruncatedAIJSONError, completion_to_json
 from stencil.extraction.instructions import compile_instructions
 from stencil.extraction.layout import (
     LayoutDocument,
@@ -29,6 +28,7 @@ from stencil.extraction.layout import (
     scan_pdf_pages,
 )
 from stencil.extraction.markers import marker_in_text, marker_terms
+from stencil.extraction.page_roles import classify_pages
 from stencil.extraction.plan_executor import execute_extraction_plan, resolve_plan_page_numbers
 from stencil.extraction.prompts import build_extraction_user_prompt
 from stencil.output.mapper import output_spec_to_columns
@@ -198,8 +198,14 @@ def extract_invoice_compact_chunked(
     supplier_profile_data: dict | None,
     field_schema,
     artifact_dir: Path | None = None,
+    page_numbers: list[int] | None = None,
 ) -> Any:
-    """Extract a PDF with compact scalar + chunked line-item AI calls."""
+    """Extract a PDF with compact scalar + chunked line-item AI calls.
+
+    ``page_numbers`` (1-based) hard-restricts which pages are read. It overrides
+    the discovery plan's own page selection, because a caller that asks for a
+    specific sample means it -- see ``models/sample_authoring``.
+    """
     from stencil.extraction.extractor import ExtractionResult
 
     started = time.time()
@@ -232,11 +238,19 @@ def extract_invoice_compact_chunked(
     scalar_pages.update(range(max(1, page_count - 1), page_count + 1))
     selected_layout_pages = sorted(set(plan_pages) | scalar_pages)
     artifact_dir = _prepare_artifact_dir(artifact_dir)
+    if page_numbers:
+        requested_pages: list[int] | None = sorted(
+            {n for n in page_numbers if 1 <= n <= (page_count or n)}
+        )
+    elif effective_shadow_mode or persisted_plan is None:
+        requested_pages = None
+    else:
+        requested_pages = selected_layout_pages
     layout_document = extract_layout_document(
         pdf_path,
         max_pages=page_count or 1,
         include_markdown=False,
-        page_numbers=(None if effective_shadow_mode or persisted_plan is None else selected_layout_pages),
+        page_numbers=requested_pages,
     )
     _write_json(artifact_dir, "layout.json", layout_document.model_dump(mode="json"))
     all_rows = _layout_rows(layout_document)
@@ -245,7 +259,10 @@ def extract_invoice_compact_chunked(
         detail_rows = all_rows
 
     doc_fields, row_fields = _fields_needed_for_compact_output(supplier_profile)
-    scalar_context = _scalar_context_rows(all_rows, supplier_profile_data)
+    page_map = classify_pages(layout_document)
+    scalar_context = _scalar_context_rows(
+        all_rows, supplier_profile_data, context_pages=set(page_map.context_pages())
+    )
     plan_result = (
         execute_extraction_plan(persisted_plan, layout_document)
         if persisted_plan is not None
@@ -379,6 +396,9 @@ def extract_invoice_compact_chunked(
     if recovered_candidate_rows:
         merged_rows = merge_compact_rows([*merged_rows, *recovered_candidate_rows])
         missing_candidates = _missing_candidates(candidates, merged_rows)
+    # A chunk that truncated and was recovered by bisection still tells us the
+    # document is at the output ceiling -- the next one like it may not recover.
+    truncated_calls = [call for call in calls if call.details.get("truncated")]
     completeness_warnings = _completeness_warnings(candidates, merged_rows, missing_candidates)
     reconciliation_warnings = _total_candidate_reconciliation_warnings(
         candidates,
@@ -398,7 +418,27 @@ def extract_invoice_compact_chunked(
         currency_rules=(supplier_profile_data or {}).get("advanced", {}).get("currency"),
         line_item_hints=(supplier_profile_data or {}).get("advanced", {}).get("line_item_hints"),
     )
+    # Confidence used to be stamped 1.0 unconditionally, which made it a fake
+    # signal in the one column operators read: of jobs reporting >=99%, 40%
+    # failed reconciliation. Report the one completeness fact this path actually
+    # measures -- the share of detected candidate rows that survived extraction.
+    if candidates:
+        raw_data["overall_confidence"] = round(
+            max(0.0, 1.0 - (len(missing_candidates) / len(candidates))), 4
+        )
+    elif truncated_calls:
+        # No candidates to measure against, but we know output was cut short.
+        raw_data["overall_confidence"] = 0.0
+
     extraction_warnings = [*completeness_warnings, *reconciliation_warnings]
+    if truncated_calls:
+        budget = runtime_settings.openai_max_output_tokens()
+        extraction_warnings.insert(
+            0,
+            f"{len(truncated_calls)} AI call(s) hit the {budget}-token output ceiling and "
+            "were retried on smaller inputs. The delivered rows may still be incomplete; "
+            "this document is too large for single-pass extraction.",
+        )
     if plan_region_missing:
         extraction_warnings.insert(
             0,
@@ -451,6 +491,8 @@ def extract_invoice_compact_chunked(
         "recovered_candidate_row_count": len(recovered_candidate_rows),
         "reconciliation_warnings": reconciliation_warnings,
         "chunk_count": len(chunks),
+        "truncated_call_count": len(truncated_calls),
+        "requested_page_numbers": requested_pages,
         "discovery_plan": {
             "available": persisted_plan is not None,
             "persisted": plan_is_persisted,
@@ -1783,6 +1825,9 @@ def compact_to_legacy_raw(
     raw: dict[str, Any] = {
         "header": header,
         "line_items": [],
+        # Placeholder only. The orchestrator overwrites this with a measured
+        # completeness ratio once it knows how many detected candidate rows
+        # actually survived extraction -- see extract_invoice_compact_chunked.
         "overall_confidence": 1.0,
     }
 
@@ -2021,7 +2066,7 @@ def _call_json_schema(
                 duration_ms=int((time.time() - started) * 1000),
                 status="error",
                 error_message=str(exc),
-                details=details,
+                details={**details, "truncated": isinstance(exc, TruncatedAIJSONError)},
             )
         )
         raise
@@ -2362,7 +2407,18 @@ def _detail_region_rows(rows: list[LayoutRowLine], supplier_profile_data: dict |
     return selected
 
 
-def _scalar_context_rows(rows: list[LayoutRowLine], supplier_profile_data: dict | None) -> list[LayoutRowLine]:
+def _scalar_context_rows(
+    rows: list[LayoutRowLine],
+    supplier_profile_data: dict | None,
+    context_pages: set[int] | None = None,
+) -> list[LayoutRowLine]:
+    """Rows shown to the scalar (document-field) call.
+
+    ``context_pages`` comes from deterministic page classification and names the
+    pages that structurally carry document-level fields. Without it this falls
+    back to "the first five pages and the last two", which finds the header only
+    when the header happens to be near the front.
+    """
     if not rows:
         return []
     structure = ((supplier_profile_data or {}).get("advanced") or {}).get("document_structure") or {}
@@ -2375,7 +2431,11 @@ def _scalar_context_rows(rows: list[LayoutRowLine], supplier_profile_data: dict 
     seen: set[str] = set()
     for row in rows:
         marker_hit = marker_in_text(markers, row.text)
-        if row.page <= 5 or row.page >= max(1, last_page - 1) or marker_hit:
+        if context_pages:
+            in_context = row.page in context_pages
+        else:
+            in_context = row.page <= 5 or row.page >= max(1, last_page - 1)
+        if in_context or marker_hit:
             if row.row_id not in seen:
                 selected.append(row)
                 seen.add(row.row_id)
@@ -2490,13 +2550,9 @@ def _write_json(artifact_dir: Path | None, filename: str, payload: dict[str, Any
 
 
 def _pdf_page_count(pdf_path: Path) -> int:
-    try:
-        doc = fitz.open(str(pdf_path))
-        count = len(doc)
-        doc.close()
-        return count
-    except Exception:
-        return 0
+    from stencil.extraction.layout import pdf_page_count
+
+    return pdf_page_count(pdf_path)
 
 
 def _is_empty(value: Any) -> bool:

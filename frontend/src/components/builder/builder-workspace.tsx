@@ -305,7 +305,10 @@ export function BuilderWorkspace({ sampleId, sampleName, target }: BuilderWorksp
               </Button>
 
               <span className="ml-auto text-sm text-muted-foreground">
-                {totalRows} rows · {data.page_count} page{data.page_count === 1 ? "" : "s"}
+                {totalRows} rows ·{" "}
+                {data.rendered_page_count < data.page_count
+                  ? `${data.rendered_page_count} of ${data.page_count} pages`
+                  : `${data.page_count} page${data.page_count === 1 ? "" : "s"}`}
               </span>
             </div>
 

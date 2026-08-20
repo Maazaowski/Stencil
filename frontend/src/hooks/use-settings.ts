@@ -37,7 +37,6 @@ export interface AppSettings {
 
   // Thresholds
   confidence_threshold: number;
-  model_confidence_threshold: number;
   reconciliation_variance_threshold: number;
   model_validation_required_successes: number;
   model_validation_max_failures: number;
@@ -66,7 +65,6 @@ export interface SettingsUpdate {
   ai_chunk_concurrency?: number;
   worker_concurrency?: number;
   confidence_threshold?: number;
-  model_confidence_threshold?: number;
   reconciliation_variance_threshold?: number;
   model_validation_required_successes?: number;
   model_validation_max_failures?: number;

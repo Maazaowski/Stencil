@@ -57,7 +57,6 @@ class SettingsResponse(BaseModel):
 
     # Thresholds
     confidence_threshold: float
-    model_confidence_threshold: float
     reconciliation_variance_threshold: float
     model_validation_required_successes: int
     model_validation_max_failures: int
@@ -91,7 +90,6 @@ class SettingsUpdate(BaseModel):
 
     # Thresholds
     confidence_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
-    model_confidence_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
     reconciliation_variance_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
     model_validation_required_successes: int | None = Field(default=None, ge=1, le=20)
     model_validation_max_failures: int | None = Field(default=None, ge=1, le=20)
@@ -153,7 +151,6 @@ def _settings_to_response() -> SettingsResponse:
         ai_chunk_concurrency=runtime["ai_chunk_concurrency"],
         worker_concurrency=runtime["worker_concurrency"],
         confidence_threshold=runtime["confidence_threshold"],
-        model_confidence_threshold=runtime["model_confidence_threshold"],
         reconciliation_variance_threshold=runtime["reconciliation_variance_threshold"],
         model_validation_required_successes=runtime["model_validation_required_successes"],
         model_validation_max_failures=runtime["model_validation_max_failures"],

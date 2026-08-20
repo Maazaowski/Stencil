@@ -1834,3 +1834,82 @@ def test_label_rejection_is_a_no_op_without_declared_labels():
     candidates = [CandidateRow(row_id="p1.r1", page=1, service_id="Description", evidence="x")]
 
     assert _reject_label_candidates(candidates, {}) == candidates
+
+
+class TestMeasuredConfidence:
+    """overall_confidence must report something, not assert something.
+
+    It was stamped 1.0 unconditionally: of jobs reporting >=99% confidence, 40%
+    failed reconciliation. The compact path can only honestly report one thing --
+    what share of the candidate rows it detected actually survived extraction.
+    """
+
+    def test_every_candidate_extracted_scores_one(self):
+        from stencil.extraction.compact_chunked import _completeness_warnings
+        assert _completeness_warnings([_c("A"), _c("B")], [{"s": "A"}, {"s": "B"}], []) == []
+
+    def test_a_missing_candidate_is_named_in_the_warning(self):
+        from stencil.extraction.compact_chunked import _completeness_warnings
+        warnings = _completeness_warnings([_c("A"), _c("B")], [{"s": "A"}], [_c("B")])
+        assert len(warnings) == 1
+        assert "Missing 1 candidate row" in warnings[0]
+        assert "B" in warnings[0]
+
+    def test_the_ratio_matches_what_survived(self):
+        # 1 of 4 candidates lost -> 0.75, the number the orchestrator writes.
+        candidates, missing = [_c(x) for x in "ABCD"], [_c("D")]
+        assert round(max(0.0, 1.0 - (len(missing) / len(candidates))), 4) == 0.75
+
+
+def _c(service_id: str):
+    from stencil.extraction.compact_chunked import CandidateRow
+    return CandidateRow(
+        row_id=f"p1.r{service_id}", service_id=service_id, page=1, evidence="",
+    )
+
+
+class TestScalarContextSelection:
+    """Which rows the document-field call gets to see.
+
+    Previously "pages 1-5 plus the last two", with no test at all. A document
+    whose header sits on page 7 was simply invisible to the scalar call.
+    """
+
+    @staticmethod
+    def _rows(pages_and_text):
+        from stencil.extraction.compact_chunked import LayoutRowLine
+        return [
+            LayoutRowLine(page=page, row_id=f"p{page}.r{i}", text=text)
+            for i, (page, text) in enumerate(pages_and_text)
+        ]
+
+    def test_context_pages_win_over_the_positional_fallback(self):
+        from stencil.extraction.compact_chunked import _scalar_context_rows
+
+        rows = self._rows([(n, f"row on page {n}") for n in range(1, 21)])
+        selected = _scalar_context_rows(rows, None, context_pages={7, 19})
+
+        assert {row.page for row in selected} == {7, 19}
+
+    def test_without_a_page_map_it_falls_back_to_the_old_rule(self):
+        from stencil.extraction.compact_chunked import _scalar_context_rows
+
+        rows = self._rows([(n, f"row on page {n}") for n in range(1, 21)])
+        selected = _scalar_context_rows(rows, None, context_pages=None)
+
+        pages = {row.page for row in selected}
+        assert pages == {1, 2, 3, 4, 5, 19, 20}, pages
+
+    def test_profile_markers_are_always_included(self):
+        """An explicitly configured marker must survive page selection."""
+        from stencil.extraction.compact_chunked import _scalar_context_rows
+
+        rows = self._rows([(9, "Billing Account Number 12345"), (10, "unrelated")])
+        profile = {"advanced": {"document_structure": {"detail_start_marker": "Billing Account"}}}
+        selected = _scalar_context_rows(rows, profile, context_pages={1})
+
+        assert [row.page for row in selected] == [9]
+
+    def test_no_rows_in_no_rows_out(self):
+        from stencil.extraction.compact_chunked import _scalar_context_rows
+        assert _scalar_context_rows([], None, context_pages={1}) == []

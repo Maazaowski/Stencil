@@ -50,6 +50,11 @@ from stencil.models.registry import (
     record_validation_failure,
     record_validation_success,
 )
+from stencil.models.sample_authoring import (
+    author_from_sample,
+    replay_and_verify,
+    should_author_from_sample,
+)
 from stencil.models.schema import ExtractionModel
 from stencil.models.training import author_and_save_profile_model
 from stencil.output.json_writer import (
@@ -67,7 +72,7 @@ from stencil.profiles.loader import find_profile_by_supplier, get_profile
 from stencil.profiles.schema import LineItemHints, SupplierProfile
 from stencil.specs.loader import resolve_output_spec
 from stencil.validation.reconciler import reconcile
-from stencil.validation.schema import CanonicalInvoice, ChargeType, ExtractedDocument
+from stencil.validation.schema import CanonicalInvoice, ChargeType, ExtractedDocument, ReconciliationResult
 
 logger = structlog.get_logger()
 
@@ -236,7 +241,10 @@ def continue_pipeline(db: Session, intake_id: str,
                 profile = find_profile_by_supplier(invoice.header.supplier_name)
             _intake = crud.get_intake(db, intake_id)
             account_label = _intake.account_label if _intake else None
-            delivery_blockers = _profile_delivery_blockers(profile)
+            delivery_blockers = [
+                *_profile_delivery_blockers(profile),
+                *_unverified_large_document_blockers(invoice, recon),
+            ]
             custom_output_dir = (
                 _resolve_output_dir(profile, account_label)
                 if profile and not delivery_blockers
@@ -365,8 +373,25 @@ def _run_production_path(
         )
         return invoice, job_id, profile
 
-    # 2. Candidate model with the same fingerprint -> AI + side-by-side validation.
     candidate = find_candidate_model(db, profile.profile_id, fingerprint)
+
+    # 1b. A long document is where reading every page is both expensive and
+    #     unreliable -- 123 sequential AI calls on a 656-page invoice, returning
+    #     between 0 and 384 rows across runs of the same file. Prefer rules:
+    #     replay a candidate if one exists, else author from a page sample. Both
+    #     are accepted only if the rows reconcile against the document's own
+    #     stated totals, and anything short of that falls through to full
+    #     extraction below, so this can save work but never lose data.
+    if should_author_from_sample(features.page_count, profile):
+        rules_first = _try_rules_before_reading(
+            db, intake_id, pdf_path, profile, fingerprint,
+            candidate=candidate, page_count=features.page_count,
+        )
+        if rules_first is not None:
+            invoice, job_id = rules_first
+            return invoice, job_id, profile
+
+    # 2. Candidate model with the same fingerprint -> AI + side-by-side validation.
     if candidate is not None:
         invoice, job_id = _process_candidate_model(
             db, intake_id, pdf_path, candidate, fingerprint, classification, profile,
@@ -383,6 +408,91 @@ def _run_production_path(
         classification=classification, supplier_profile=profile,
     )
     return invoice, job_id, profile
+
+
+def _try_rules_before_reading(
+    db: Session,
+    intake_id: str,
+    pdf_path: Path,
+    profile: SupplierProfile,
+    fingerprint: str,
+    *,
+    candidate: ExtractionModel | None,
+    page_count: int,
+) -> tuple[CanonicalInvoice, str] | None:
+    """Try to answer a long document with rules instead of full extraction.
+
+    Returns ``None`` for every failure, which sends the caller to ordinary AI
+    extraction -- the path that always works. Nothing here is allowed to be the
+    reason a document fails to process.
+    """
+    outcome = None
+    try:
+        if candidate is not None:
+            outcome = replay_and_verify(candidate, pdf_path, intake_id)
+            if not outcome.usable:
+                logger.info("pipeline.rules_first.candidate_rejected",
+                            intake_id=intake_id, reason=outcome.reason)
+                outcome = None
+        if outcome is None:
+            outcome = author_from_sample(
+                db, intake_id=intake_id, pdf_path=pdf_path, profile=profile,
+                fingerprint=fingerprint,
+            )
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("pipeline.rules_first.failed", intake_id=intake_id, error=str(exc))
+        return None
+
+    if not outcome.usable or outcome.invoice is None:
+        crud.log_processing_step(
+            db, intake_id=intake_id, step="rules_first", status="skipped",
+            message=f"Rules-first declined ({outcome.reason}); reading the full document.",
+            details={"page_count": page_count, **outcome.metrics},
+        )
+        return None
+
+    model = outcome.model
+    crud.log_processing_step(
+        db, intake_id=intake_id, step="rules_first", status="completed",
+        message=(
+            f"Authored from {len(outcome.sample_pages)} of {page_count} pages and "
+            f"replayed across the document ({len(outcome.invoice.rows)} rows)."
+            if outcome.sample_pages else
+            f"Replayed existing rules across {page_count} pages "
+            f"({len(outcome.invoice.rows)} rows)."
+        ),
+        details={
+            "extraction_path": "model",
+            "model_id": model.model_id if model else None,
+            "sample_pages": outcome.sample_pages,
+            **outcome.metrics,
+            **_profile_log_details(profile, source="rules_first"),
+        },
+    )
+    publish_event(intake_id, "extraction", "completed",
+                  f"Rules replayed across {page_count} pages")
+
+    job = crud.create_extraction_job(
+        db,
+        intake_id=intake_id,
+        extraction_path="model",
+        extraction_model_id=model.model_id if model else None,
+        supplier_profile_id=profile.profile_id,
+        supplier_name=profile.identity.canonical_name,
+        output_type=profile.classification.output_type,
+    )
+    crud.update_extraction_job(
+        db, job.id, status="completed", started_at=datetime.now(),
+        tokens_input=outcome.tokens_input, tokens_output=outcome.tokens_output,
+    )
+
+    invoice = outcome.invoice
+    _normalize_line_items(
+        invoice,
+        keep_zero_amount=_keep_zero_line_items(profile),
+        require_identifier=_require_identifier(profile),
+    )
+    return invoice, job.id
 
 
 def _flag_layout_drift(
@@ -1105,8 +1215,10 @@ def _write_model_review_artifacts(
 
 
 def _validate_model_output_for_reuse(invoice: ExtractedDocument) -> tuple[bool, str]:
-    if invoice.metadata.overall_confidence < float(runtime_settings.runtime_value("model_confidence_threshold")):
-        return False, "overall confidence below threshold"
+    # No confidence gate here on purpose. Interpreter confidence is derived from
+    # exactly two conditions -- a missing invoice number and an empty item list --
+    # and both are re-checked below with a message that names the actual cause.
+    # A threshold over that number could only ever restate them, less clearly.
     if not invoice.header.invoice_number or invoice.header.invoice_number == "UNKNOWN":
         return False, "missing invoice number"
     if not invoice.line_items:
@@ -1275,6 +1387,80 @@ def _profile_delivery_blockers(profile: SupplierProfile | None) -> list[str]:
     return []
 
 
+def _unverified_large_document_blockers(
+    invoice: ExtractedDocument, recon: ReconciliationResult | None,
+) -> list[str]:
+    """Stop an unchecked large document before it reaches the customer.
+
+    A six-page invoice that does not add up gets eyeballed by whoever opens it.
+    A 656-page one does not -- nobody scans 3,400 rows looking for the row that
+    went missing, so an unverified deliverable is worse than a missing one.
+
+    Only an actual failed check blocks. A document that *cannot* be verified
+    (no reconcilable totals in its schema) is let through: that is the normal
+    state for a document type with no arithmetic, and blocking it would make
+    the gate unusable the moment Stencil handles something other than invoices.
+
+    The completed/ package is written either way, so nothing is lost -- this
+    gates only the copy into the supplier's delivery folder.
+    """
+    threshold = settings.blocking_check_page_threshold
+    pages = invoice.metadata.total_pages
+    if threshold <= 0 or pages < threshold or recon is None or recon.is_reconciled:
+        return []
+    return [
+        f"{pages}-page document failed its arithmetic check "
+        f"(variance {recon.variance_pct:.2%}); too large to verify by hand"
+    ]
+
+
+def _deliver_without_clobbering(source: Path, dest_dir: Path) -> Path:
+    """Copy a deliverable into a supplier folder without ever overwriting a
+    different invoice's file.
+
+    Same content -> atomic replace, so reprocessing the same PDF is idempotent.
+    Different content under the same name -> a numbered sibling plus a warning,
+    because two distinct invoices sharing a filename is a real ambiguity that
+    must be visible rather than resolved by whichever ran last.
+    """
+    import hashlib
+    import os
+    import shutil
+
+    def _digest(path: Path) -> str:
+        h = hashlib.sha256()
+        with path.open("rb") as handle:
+            for block in iter(lambda: handle.read(1024 * 1024), b""):
+                h.update(block)
+        return h.hexdigest()
+
+    target = dest_dir / source.name
+    if target.exists() and _digest(target) != _digest(source):
+        stem, suffix = target.stem, target.suffix
+        counter = 2
+        while (candidate := dest_dir / f"{stem} ({counter}){suffix}").exists():
+            if _digest(candidate) == _digest(source):
+                target = candidate
+                break
+            counter += 1
+        else:
+            target = candidate
+        logger.warning(
+            "pipeline.output.name_collision",
+            source=source.name, delivered_as=target.name, directory=str(dest_dir),
+        )
+
+    # Stage beside the target so the rename is atomic on the same filesystem;
+    # a half-written deliverable must never look like a finished one.
+    staging = dest_dir / f".{target.name}.partial"
+    try:
+        shutil.copy2(source, staging)
+        os.replace(staging, target)
+    finally:
+        staging.unlink(missing_ok=True)
+    return target
+
+
 def _generate_output(db: Session, intake_id: str,
                      invoice: CanonicalInvoice,
                      custom_output_dir: Path | None = None,
@@ -1288,7 +1474,11 @@ def _generate_output(db: Session, intake_id: str,
 
     intake = crud.get_intake(db, intake_id)
     original_filename = intake.original_filename if intake else "invoice_output.pdf"
-    xlsx_name = derive_output_xlsx_name(account_label or original_filename)
+    # Name from the source PDF, per the delivery contract in README.md ("stem
+    # matches the source PDF").  Naming by account_label meant every invoice for
+    # an account produced the same filename and silently overwrote the last --
+    # account 82824706 had 10 distinct invoices all delivered as 82824706.xlsx.
+    xlsx_name = derive_output_xlsx_name(original_filename)
     xlsx_path = write_xlsx(
         invoice, output_dir / xlsx_name, resolve_output_spec(profile),
     )
@@ -1312,19 +1502,19 @@ def _generate_output(db: Session, intake_id: str,
     # Copy output to custom supplier-specific directory if configured
     if custom_output_dir:
         try:
-            import shutil
             custom_output_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(xlsx_path, custom_output_dir / xlsx_path.name)
+            copied = _deliver_without_clobbering(xlsx_path, custom_output_dir)
             crud.log_processing_step(
                 db, intake_id=intake_id, step="output_copy", status="completed",
                 message=f"Output copied to supplier directory: {custom_output_dir}",
                 details={
-                    "files": [xlsx_path.name],
+                    "files": [copied.name],
+                    **({"renamed_from": xlsx_path.name} if copied.name != xlsx_path.name else {}),
                     **_profile_log_details(profile, source="output_profile"),
                 },
             )
             logger.info("pipeline.output.copied", intake_id=intake_id,
-                        custom_dir=str(custom_output_dir))
+                        custom_dir=str(custom_output_dir), filename=copied.name)
         except Exception as e:
             logger.warning("pipeline.output.copy_failed", intake_id=intake_id,
                            custom_dir=str(custom_output_dir), error=str(e))

@@ -42,7 +42,11 @@ export interface LayoutPage {
 
 export interface IntakeLayout {
   intake_id: string;
+  /** True length of the PDF. */
   page_count: number;
+  /** How many pages this response actually carries; the canvas payload is
+   *  bounded so a 700-page document does not serialize every cell. */
+  rendered_page_count: number;
   pages: LayoutPage[];
   tables: unknown[];
   warnings: string[];

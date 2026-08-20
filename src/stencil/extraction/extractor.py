@@ -49,7 +49,8 @@ def extract_invoice(pdf_path: Path, supplier_name: str | None = None,
                     supplier_profile_id: str | None = None,
                     field_schema=None,
                     artifact_dir: Path | None = None,
-                    supplier_profile=None) -> ExtractionResult:
+                    supplier_profile=None,
+                    page_numbers: list[int] | None = None) -> ExtractionResult:
     """Extract invoice data via OpenAI Structured Outputs.
 
     Text-first: the PDF's embedded text layer is the primary input (accurate
@@ -60,6 +61,10 @@ def extract_invoice(pdf_path: Path, supplier_name: str | None = None,
     ``supplier_profile`` is an optional in-memory profile that takes precedence
     over ``supplier_profile_id`` — used to re-extract with an unsaved draft
     profile (e.g. the profile-authoring assistant) without persisting it first.
+
+    ``page_numbers`` (1-based) restricts extraction to a subset of pages. Used by
+    the sample-authoring path to read a dozen representative pages of a very long
+    document instead of all of them; ``None`` reads everything, as before.
     """
     client = get_ai_client(purpose="extraction")
 
@@ -94,6 +99,7 @@ def extract_invoice(pdf_path: Path, supplier_name: str | None = None,
             supplier_profile_data=profile_data,
             field_schema=schema,
             artifact_dir=artifact_dir,
+            page_numbers=page_numbers,
         )
     if mode != "legacy":
         raise ValueError(
@@ -297,18 +303,18 @@ def _render_pages(pdf_path: Path, page_indexes: list[int],
     return images
 
 
-def _extract_all_text(pdf_path: Path, max_pages: int = 30) -> list[str]:
+def _extract_all_text(pdf_path: Path, max_pages: int | None = None) -> list[str]:
     """Extract the configured text substrate for extraction/model authoring."""
     if settings.extraction_use_layout_text:
         return render_layout_text(extract_layout_document(pdf_path, max_pages=max_pages))
     return _extract_flat_text(pdf_path, max_pages=max_pages)
 
 
-def _extract_flat_text(pdf_path: Path, max_pages: int = 30) -> list[str]:
+def _extract_flat_text(pdf_path: Path, max_pages: int | None = None) -> list[str]:
     """Extract raw text from PDF pages using pymupdf."""
     doc = fitz.open(str(pdf_path))
     texts = []
-    for i in range(min(max_pages, len(doc))):
+    for i in range(len(doc) if max_pages is None else min(max_pages, len(doc))):
         texts.append(doc[i].get_text())
     doc.close()
     return texts

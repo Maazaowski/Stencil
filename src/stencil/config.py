@@ -146,8 +146,36 @@ class Settings(BaseSettings):
 
     # Extraction
     confidence_threshold: float = 0.75
-    model_confidence_threshold: float = 0.80
     reconciliation_variance_threshold: float = 0.01
+
+    # Above this page count a document that fails its arithmetic check is not
+    # delivered to the supplier folder. A short invoice can be eyeballed; nobody
+    # verifies 3,400 rows by hand, so shipping an unchecked large document is
+    # worse than shipping nothing. The full package is still written to
+    # completed/ and an exception is raised for review. 0 disables the gate.
+    # Measured: reconciliation passes 68% under 100 pages and 25% above 200.
+    blocking_check_page_threshold: int = 100
+
+    # --- sample authoring (P2) -------------------------------------------------
+    # For a long document with no usable model, read a dozen representative pages
+    # with AI, author extraction rules from them, then replay those rules across
+    # every page deterministically. Measured on a 656-page invoice: full AI
+    # extraction sends 2.87M characters over 123 sequential calls and returned
+    # between 0 and 384 rows across four runs; a rule replay of the same document
+    # takes 0.09s, costs nothing, and is identical every time.
+    #
+    # OFF by default: this path has not yet been validated against live AI, and an
+    # unvalidated route must not change production behaviour on its own.
+    sample_authoring_enabled: bool = False
+    # Below this page count, ordinary extraction is cheap and reliable enough.
+    sample_authoring_min_pages: int = 100
+    # How many pages the authoring pass is allowed to read.
+    sample_authoring_max_sample_pages: int = 12
+    # Replayed output must reconcile to within this fraction of the stated total
+    # before it is trusted in place of full extraction. Deliberately tighter than
+    # reconciliation_variance_threshold: this decides whether to skip reading the
+    # document at all, so it must be harder to pass than an ordinary check.
+    sample_authoring_max_variance: float = 0.005
     model_validation_required_successes: int = 3
     model_validation_max_failures: int = 3
     # Grounded authoring refine loop: author -> execute -> diff against the whole

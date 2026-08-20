@@ -163,9 +163,25 @@ def scan_pdf_pages(pdf_path: Path) -> PDFTextScan:
     )
 
 
+def pdf_page_count(pdf_path: Path) -> int:
+    """True page count of a PDF, or 0 if it cannot be opened.
+
+    The single source of truth: callers that need to distinguish "the document
+    has N pages" from "we laid out N pages" must use this rather than
+    ``len(document.pages)``.
+    """
+    try:
+        doc = fitz.open(str(pdf_path))
+        count = len(doc)
+        doc.close()
+        return count
+    except Exception:
+        return 0
+
+
 def extract_layout_document(
     pdf_path: Path,
-    max_pages: int = 30,
+    max_pages: int | None = None,
     *,
     include_markdown: bool = True,
     page_numbers: list[int] | None = None,
@@ -174,8 +190,13 @@ def extract_layout_document(
     """Extract coordinate-aware rows/cells and best-effort table regions.
 
     ``page_numbers`` is one-based and allows discovery/production to avoid
-    constructing expensive layout data for irrelevant pages.  Omitting it keeps
-    the historical first-``max_pages`` behavior.
+    constructing expensive layout data for irrelevant pages.
+
+    ``max_pages`` defaults to ``None`` (every page).  It used to default to 30,
+    which silently truncated every caller that did not override it -- including
+    the interpreter, so a model could never read past page 30 of a long
+    document.  A caller that genuinely wants a bound must now ask for it, and
+    the bound is reported in ``warnings`` rather than applied invisibly.
     """
     warnings: list[str] = []
     doc = fitz.open(str(pdf_path))
@@ -183,11 +204,14 @@ def extract_layout_document(
     all_tables: list[LayoutTable] = []
 
     if page_numbers is None:
-        selected_indexes = list(range(min(max_pages, len(doc))))
+        selected_indexes = list(range(len(doc)))
     else:
         selected_indexes = sorted({number - 1 for number in page_numbers if 1 <= number <= len(doc)})
-        if max_pages > 0:
-            selected_indexes = selected_indexes[:max_pages]
+    if max_pages is not None and max_pages > 0 and len(selected_indexes) > max_pages:
+        warnings.append(
+            f"layout truncated to {max_pages} of {len(selected_indexes)} pages by an explicit max_pages bound"
+        )
+        selected_indexes = selected_indexes[:max_pages]
 
     for page_index in selected_indexes:
         page = doc[page_index]

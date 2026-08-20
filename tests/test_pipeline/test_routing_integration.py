@@ -390,7 +390,15 @@ def test_output_amounts_survive_the_model_path(db, tmp_path, register_profile, f
     assert sum((item.amount for item in invoice.line_items), Decimal("0")) == Decimal("150.00")
 
 
-def test_supplier_output_copy_uses_account_label_named_xlsx(db, tmp_path):
+def test_supplier_output_is_named_after_the_pdf_even_with_an_account_label(db, tmp_path):
+    """The delivered file is named from the source PDF, not the account.
+
+    Naming by account_label meant every invoice for an account wrote the same
+    filename into the same folder over a bare copy: account 82824706 had 10
+    distinct invoices all delivered as 82824706.xlsx, and only the last one
+    processed survived. README.md documents the contract as
+    ``{original_pdf_name}.xlsx``.
+    """
     supplier_xls = tmp_path / "supplier" / "xls"
     profile = SupplierProfile(
         profile_id=PROFILE_ID,
@@ -417,14 +425,43 @@ def test_supplier_output_copy_uses_account_label_named_xlsx(db, tmp_path):
         account_label=record.account_label,
     )
 
-    assert xlsx_path.name == "7012506101.xlsx"
+    assert xlsx_path.name == "U0143096.xlsx"
+    assert not (supplier_xls / "7012506101.xlsx").exists()
     assert json_path.exists()
     assert log_path.exists()
     assert manifest_path.exists()
-    assert (supplier_xls / "7012506101.xlsx").exists()
+    assert (supplier_xls / "U0143096.xlsx").exists()
     assert not (supplier_xls / "canonical_invoice.json").exists()
     assert not (supplier_xls / "extraction_log.json").exists()
     assert not (supplier_xls / "manifest.json").exists()
+
+
+def test_two_invoices_for_one_account_deliver_two_files(db, tmp_path):
+    """The actual data-loss regression: one account, many invoices, one folder."""
+    supplier_xls = tmp_path / "supplier" / "xls"
+    profile = SupplierProfile(
+        profile_id=PROFILE_ID,
+        status="active",
+        identity=SupplierIdentity(canonical_name="TestCo"),
+        classification=ClassificationSignals(output_type="standard"),
+        delivery={"inbound_path": str(tmp_path / "supplier" / "pdf"), "output_path": str(supplier_xls)},
+    )
+    for filename in ("82824706_january.pdf", "82824706_february.pdf"):
+        record = crud.create_intake(
+            db,
+            original_filename=filename,
+            original_pdf_path=str(tmp_path / "processing" / filename),
+            supplier_profile_id=PROFILE_ID,
+            account_label="82824706",
+        )
+        _generate_output(
+            db, record.id, _canned_invoice(record.id),
+            custom_output_dir=supplier_xls, profile=profile,
+            account_label=record.account_label,
+        )
+
+    delivered = sorted(p.name for p in supplier_xls.glob("*.xlsx"))
+    assert delivered == ["82824706_february.xlsx", "82824706_january.xlsx"]
 
 
 def test_supplier_output_copy_falls_back_to_pdf_named_xlsx_without_account_label(db, tmp_path):

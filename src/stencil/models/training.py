@@ -50,10 +50,17 @@ class TrainingExample:
     pdf_path: Path | None = None
     page_texts: list[str] = field(default_factory=list)
     layout_evidence: dict = field(default_factory=dict)
+    #: 1-based page numbers, most informative first. Used only when the prompt
+    #: must be trimmed, to decide which pages survive.
+    page_priority: list[int] = field(default_factory=list)
 
     def prepared(self) -> TrainingExample:
         if not self.page_texts:
             self.page_texts = render_layout_text(self.document)
+        if not self.page_priority:
+            from stencil.extraction.page_roles import classify_pages
+
+            self.page_priority = classify_pages(self.document).ranked_pages()
         if not self.layout_evidence:
             self.layout_evidence = build_model_authoring_evidence(
                 self.document, self.ai_invoice, max_rows=settings.model_authoring_sample_rows,
@@ -365,6 +372,7 @@ def _train(
         try:
             auth = author_extraction_model(
                 page_texts=primary.page_texts,
+                page_priority=primary.page_priority,
                 layout_evidence=primary.layout_evidence,
                 ai_invoice=primary.ai_invoice,
                 profile=profile,

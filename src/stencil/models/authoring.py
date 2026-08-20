@@ -288,7 +288,8 @@ def _strip_layout_summary(evidence: dict | None) -> dict:
 
 
 def _build_and_fit_prompt(
-    *, budget: int, page_texts: list[str], additional: list[dict], layout_evidence: dict, **kwargs,
+    *, budget: int, page_texts: list[str], additional: list[dict], layout_evidence: dict,
+    page_priority: list[int] | None = None, **kwargs,
 ) -> str:
     """Build the authoring prompt; if over ``budget`` tokens, trim in order of
     least value until it fits. Normal-size layouts are well under budget and are
@@ -296,7 +297,14 @@ def _build_and_fit_prompt(
     documents get trimmed.
 
     Trim order: (1) extras' redundant layout summary, (2) extras' page text,
-    (3) primary's redundant layout summary, (4) truncate primary page text.
+    (3) primary's redundant layout summary, (4) drop primary pages.
+
+    Step 4 used to keep a *prefix* of pages, which is only the right answer when
+    the interesting part of a document is at its front. ``page_priority`` (1-based
+    page numbers, most informative first, from deterministic page classification)
+    makes it keep the pages that carry the document's shape instead -- the header,
+    the boundaries of each table run, a few continuation pages -- emitted in
+    document order so the model still reads them front to back.
     """
     def build(primary_pages: list[str], primary_ev: dict, extras: list[dict]) -> str:
         return build_authoring_user_prompt(
@@ -325,13 +333,19 @@ def _build_and_fit_prompt(
 
     overhead = len(prompt) - sum(len(p) for p in page_texts)
     keep_chars = max(budget * 4 - overhead, 4000)
-    trimmed: list[str] = []
+
+    order = [n for n in (page_priority or []) if 1 <= n <= len(page_texts)]
+    order += [n for n in range(1, len(page_texts) + 1) if n not in set(order)]
+
+    kept: set[int] = set()
     used = 0
-    for page in page_texts:
-        if trimmed and used + len(page) > keep_chars:
-            break
-        trimmed.append(page)
-        used += len(page)
+    for number in order:
+        size = len(page_texts[number - 1])
+        if kept and used + size > keep_chars:
+            continue
+        kept.add(number)
+        used += size
+    trimmed = [page_texts[n - 1] for n in sorted(kept)]
     return build(trimmed or page_texts[:1], lean_primary, extras)
 
 
@@ -381,6 +395,7 @@ def _author_section(
     *, client, section: str, field_schema, page_texts: list[str], prompt_target: dict,
     layout_evidence: dict, additional: list[dict], profile: SupplierProfile,
     line_amounts_are_net: bool, feedback: str | None,
+    page_priority: list[int] | None = None,
 ) -> tuple[dict, int, int, int]:
     """One focused AI authoring call for a single section of the rule document.
 
@@ -398,6 +413,7 @@ def _author_section(
     user_prompt = _build_and_fit_prompt(
         budget=settings.model_authoring_max_input_tokens,
         page_texts=page_texts,
+        page_priority=page_priority,
         additional=extras,
         layout_evidence=evidence,
         target=target,
@@ -440,6 +456,7 @@ def author_extraction_model(
     intake_id: str,
     feedback: str | None = None,
     extra_examples: list[AuthoringExample] | None = None,
+    page_priority: list[int] | None = None,
 ) -> AuthoringResult:
     """One AI authoring call: a single rule document grounded in evidence.
 
@@ -490,7 +507,7 @@ def author_extraction_model(
         section_raw, ti, to, dur = _author_section(
             client=client, section=section, field_schema=field_schema,
             page_texts=page_texts, prompt_target=prompt_target, layout_evidence=layout_evidence,
-            additional=additional, profile=profile,
+            additional=additional, profile=profile, page_priority=page_priority,
             line_amounts_are_net=line_amounts_are_net, feedback=feedback,
         )
         raw.update(section_raw)

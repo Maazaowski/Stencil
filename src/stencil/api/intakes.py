@@ -88,6 +88,7 @@ def get_builder_sample_pdf(sample_id: str):
 def get_intake_layout(
     intake_id: str,
     column_split_x: list[float] | None = Query(default=None),
+    max_pages: int = Query(default=30, ge=1),
 ):
     """Coordinate-aware layout of the invoice/sample: pages (size), visual rows
     and cells with normalized bboxes + inferred roles. Drives the builder canvas.
@@ -96,17 +97,26 @@ def get_intake_layout(
     independent reading columns, so the canvas shows the same rows the model will
     execute against. With no split each page carries a best-effort
     ``suggested_column_split_x`` hint for the builder's divider.
+
+    ``max_pages`` bounds the canvas payload -- a 700-page document would otherwise
+    serialize every cell on every page. ``page_count`` reports the document's true
+    length and ``rendered_page_count`` what this response actually carries; any
+    truncation is also named in ``warnings``.
     """
     from stencil.extraction.layout import (
         extract_layout_document,
         layout_evidence_summary,
+        pdf_page_count,
         suggest_gutter_for_page,
     )
 
     pdf_path = resolve_intake_pdf_path(intake_id)
     try:
         document = extract_layout_document(
-            pdf_path, include_markdown=False, column_split_x=column_split_x or None
+            pdf_path,
+            max_pages=max_pages,
+            include_markdown=False,
+            column_split_x=column_split_x or None,
         )
     except Exception as e:  # pragma: no cover - defensive
         raise HTTPException(status_code=422, detail=f"Layout extraction failed: {e}") from e
@@ -120,7 +130,8 @@ def get_intake_layout(
 
     return {
         "intake_id": intake_id,
-        "page_count": len(document.pages),
+        "page_count": pdf_page_count(pdf_path),
+        "rendered_page_count": len(document.pages),
         "column_split_x": column_split_x or [],
         **summary,
     }

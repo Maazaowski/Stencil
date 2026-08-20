@@ -3,7 +3,6 @@
 import shutil
 from pathlib import Path
 
-import fitz  # pymupdf
 import structlog
 from sqlalchemy.orm import Session
 
@@ -79,13 +78,9 @@ def process_new_pdf(
 
 
 def _get_page_count(pdf_path: Path) -> int:
-    try:
-        doc = fitz.open(str(pdf_path))
-        count = len(doc)
-        doc.close()
-        return count
-    except Exception:
-        return 0
+    from stencil.extraction.layout import pdf_page_count
+
+    return pdf_page_count(pdf_path)
 
 
 def _archive_pdf(pdf_path: Path, intake_id: str) -> Path:

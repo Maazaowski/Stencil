@@ -30,6 +30,7 @@ from stencil.extraction.layout import (
     scan_pdf_pages,
 )
 from stencil.extraction.normalization import apply_layout_profile_hints
+from stencil.extraction.page_roles import classify_pages
 from stencil.fields.loader import (
     default_field_schema,
     get_field_schema,
@@ -124,9 +125,23 @@ def _extract_and_cache(
     )
     page_texts = render_layout_text(layout)
 
+    # Classify once, here, where the layout is already in memory. Everything
+    # downstream that needs to know which pages matter reads this small file
+    # rather than re-parsing a 656-page layout.
+    page_map = classify_pages(layout)
     _write_json(artifact_dir / "extracted.json", doc.model_dump(mode="json"))
     _write_json(artifact_dir / "layout.json", layout.model_dump(mode="json"))
     _write_json(artifact_dir / "page_texts.json", page_texts)
+    _write_json(artifact_dir / "page_map.json", {
+        "page_count": len(page_map.pages),
+        "roles": {str(page.page_number): page.role for page in page_map.pages},
+        "runs": [
+            {"run_id": run.run_id, "pages": list(run.pages), "record_rows": run.record_rows}
+            for run in page_map.runs
+        ],
+        "context_page_numbers": page_map.context_pages(),
+        "sample_page_numbers": page_map.sample_pages(),
+    })
 
     # Track AI cost for the session.
     cost = float(estimate_cost_usd(result.ai_model_name, result.tokens_input, result.tokens_output))
@@ -375,8 +390,17 @@ def _invoice_evidence(db: Session, session) -> list[InvoiceEvidence]:
         diff_feedback = (prior_previews.get(inv.id) or {}).get("diff_feedback")
         if settings.profile_discovery_engine_enabled and inv.scan_metadata:
             selected = set(inv.scan_metadata.get("selected_page_numbers") or [])
-            selected.update(range(1, min(5, len(page_texts)) + 1))
-            selected.update(range(max(1, len(page_texts) - 1), len(page_texts) + 1))
+            # Structural pages rather than a positional prefix: the header of a
+            # 656-page invoice is not reliably in its first five pages, and its
+            # totals are not reliably in its last two.
+            page_map_path = adir / "page_map.json"
+            if page_map_path.exists():
+                cached = _read_json(page_map_path)
+                selected.update(cached.get("context_page_numbers") or [])
+                selected.update(cached.get("sample_page_numbers") or [])
+            else:
+                selected.update(range(1, min(5, len(page_texts)) + 1))
+                selected.update(range(max(1, len(page_texts) - 1), len(page_texts) + 1))
             page_texts = [
                 text for page_number, text in enumerate(page_texts, start=1)
                 if page_number in selected

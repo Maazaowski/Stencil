@@ -161,7 +161,6 @@ export default function SettingsPage() {
           openai_timeout: settings.openai_timeout,
           worker_concurrency: settings.worker_concurrency,
           confidence_threshold: settings.confidence_threshold,
-          model_confidence_threshold: settings.model_confidence_threshold,
           reconciliation_variance_threshold:
             settings.reconciliation_variance_threshold,
           watcher_poll_interval: settings.watcher_poll_interval,
@@ -213,7 +212,6 @@ export default function SettingsPage() {
         openai_timeout: settings.openai_timeout,
         worker_concurrency: settings.worker_concurrency,
         confidence_threshold: settings.confidence_threshold,
-        model_confidence_threshold: settings.model_confidence_threshold,
         reconciliation_variance_threshold:
           settings.reconciliation_variance_threshold,
         watcher_poll_interval: settings.watcher_poll_interval,
